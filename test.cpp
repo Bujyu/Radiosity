@@ -29,14 +29,14 @@ void readMesh( char* path, float center[3], float radius ){
 
 
 	bbMin = bbMax = _mesh.point(v_it);  // accessing the Point of a vertex
-	for (; v_it!=v_end; ++v_it){
+	for( ; v_it!=v_end ; ++v_it ){
 		bbMin.minimize(_mesh.point(v_it));
 		bbMax.maximize(_mesh.point(v_it));
 	}
 
-	for (int i = 0; i < 3; i++)
+	for ( int i = 0; i < 3 ; i++ )
 		center[i] = (bbMin[i] +bbMax[i])/2;
-	radius = (bbMax-bbMin).norm()/2;  // set radius as half of bbox diagonal
+	radius = (bbMax-bbMin).norm()/2; // set radius as half of bbox diagonal
 
 	_mesh.request_face_normals();
 	_mesh.update_normals();

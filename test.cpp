@@ -5,13 +5,11 @@
 #include <iostream>
 #include <ctime>
 
-
 #include <windows.h>
 #include <gl/gluit.h>
 #include <gl.hh>
 
 typedef OpenMesh::TriMesh_ArrayKernelT<>  Mesh;
-//typedef OpenMesh::PolyMesh_ArrayKernelT<>  Mesh;
 
 Mesh _mesh;
 int gw, gh;
@@ -19,7 +17,6 @@ int gw, gh;
 //Main Func
 int mainwin;
 int viewer;
-
 
 void readMesh( char* path, float center[3], float radius ){
 

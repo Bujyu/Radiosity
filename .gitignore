@@ -1,0 +1,5 @@
+# To avoid git checkout specficed file
+*.a
+*.o
+*.exe
+*~

@@ -88,6 +88,10 @@ double vDot( VEC v1, VEC v2 ){
 
 }
 
+inline double vCos( VEC v1, VEC v2 ){
+    return vDot( v1, v2 ) / ( vLength( v1 ) * vLength( v2 ) );
+}
+
 double vLength( VEC v ){
 
     int i;
@@ -100,11 +104,10 @@ double vLength( VEC v ){
 
 }
 
-VEC vNormalize( VEC v ){
-
+inline VEC vNormalize( VEC v ){
     return vScalar( v, 1 / vLength( v ) );
-
 }
+
 /*
 MAT vTranspose( VEC v ){
 
@@ -132,16 +135,20 @@ int main(){
     v2 = vCreate( 3 );
 
     //Assign value
-    for( i = 0 ; i < v1.elements ; i++ ){
-        v1.vector[i] = (double) ( rand() % 100 );
-        v2.vector[i] = (double) ( rand() % 100 ) / 100;
-    }
+    v1.vector[0] = 1;
+    v1.vector[1] = 0;
+    v1.vector[2] = 0;
+
+    v2.vector[0] = 1;
+    v2.vector[1] = 1;
+    v2.vector[2] = 0;
 
     vPrint( v1 );
     vPrint( v2 );
 
     printf("vector dot : %lf\n", vDot( v1, v2 ) );
     printf("lenght : %lf\n", vLength( v1 ) );
+    printf("Cos : %lf\n", acos( vCos( v1, v2 ) ) * 180.0 / M_PI );
     vPrint( vNormalize( v1 ) );
 
     return 0;

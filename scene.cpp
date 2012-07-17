@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#inlcude <baseDef.h>
+#include "baseDef.h"
 
 #define SET( m, data ) \
         { \
@@ -13,13 +14,15 @@
 MODEL createModel( char* path, float pos[], float color[] ){
 
     MODEL m;
+    float center[3], radius;
+
     OpenMesh::IO::read_mesh( m.mesh, path );
 
     Mesh::ConstVertexIter	v_it( m.mesh.vertices_begin() ),
                             v_end( m.mesh.vertices_end() );
 	Mesh::Point             bbMin, bbMax;
 
-	bbMin = bbMax = (*_mesh).point(v_it);  // accessing the Point of a vertex
+	bbMin = bbMax = m.mesh.point(v_it);  // accessing the Point of a vertex
 	for (; v_it!=v_end; ++v_it){
 		bbMin.minimize( m.mesh.point(v_it));
 		bbMax.maximize( m.mesh.point(v_it));
@@ -34,20 +37,30 @@ MODEL createModel( char* path, float pos[], float color[] ){
 
     SET( m.position, pos );
     SET( m.color, color );
+    SET( m.center, center );
+    m.radius = radius;
 
     return m;
 
 }
 
+void addModel( SCENE *scene, MODEL m ){
+
+    (*scene).model = &m;
+    m.next = NULL;
+
+
+}
+
 SCENE createScene(){
 
-    SCENE scene = (SCENE) malloc( sizeof( SCENE ) );
+    SCENE scene;;
 
-    scene->faces = 0;
-    scene->edges = 0;
-    scene->vertices = 0;
+    scene.faces = 0;
+    scene.edges = 0;
+    scene.vertices = 0;
 
-    scene->model = NULL;
+    scene.model = NULL;
 
     return scene;
 
@@ -56,7 +69,7 @@ SCENE createScene(){
 SCENE readScene( char* path ){
 
     SCENE scene = createScene();
-    FILE file = fopen( path, "r" );
+    FILE* file = fopen( path, "r" );
 
     char mpath[1000];
     float pos[3];
@@ -69,12 +82,18 @@ SCENE readScene( char* path ){
 
     while( true ){
 
-        fscanf( file, "%s", p );
-        fscanf( file, "%f %l %f", pos[0], pos[1], pos[2] );
-        fscanf( file, "%f %f %f", color[0], color[1], color[2] );
+        fscanf( file, "%s", mpath );
+
+        if( strcmpi( mpath, "#" ) )
+            break;
+
+        fscanf( file, "%f %f %f", &pos[0], &pos[1], &pos[2] );
+        fscanf( file, "%f %f %f", &color[0], &color[1], &color[2] );
 
         addModel( &scene, createModel( mpath, pos, color ) );
 
     }
+
+    return scene;
 
 }

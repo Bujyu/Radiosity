@@ -21,6 +21,10 @@ typedef struct model {
     float center[3];
     float radius;
 
+    int faces;
+    int edges;
+    int vertices;
+
     //Next ptr
     struct model* next;
 

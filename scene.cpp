@@ -34,13 +34,20 @@ MODEL createModel( char* path, float pos[], float color[] ){
 		center[i] = (bbMin[i] +bbMax[i])/2;
 	radius = (bbMax-bbMin).norm()/2;  // set radius as half of bbox diagonal
 
+    //Update Face Normal
 	m.mesh.request_face_normals();
 	m.mesh.update_normals();
 
+    //Attribute
     SET( m.position, pos );
     SET( m.color, color );
+
     SET( m.center, center );
     m.radius = radius;
+
+    m.faces = m.mesh.n_faces();
+    m.edges = m.mesh.n_edges();
+    m.vertices = m.mesh.n_vertices();
 
     return m;
 
@@ -98,15 +105,14 @@ SCENE readScene( char* path ){
         addModel( &scene.model, model );
         scene.vmodel.push_back( *model );
 
+        //Update scene attributes
+        scene.faces += (*model).faces;
+        scene.edges += (*model).edges;
+        scene.vertices += (*model).vertices;
+
     }
 
     fclose( file );
-
-    for( ; scene.model ; scene.model = scene.model->next )
-        printf("%d\n", scene.model->mesh.n_faces() );
-
-    for( int n = 0 ; n < scene.vmodel.size() ; n++ )
-        printf("%d\n", scene.vmodel[n].mesh.n_faces() );
 
     return scene;
 
@@ -117,6 +123,8 @@ int main(){
     SCENE scene;
 
     scene = readScene( (char*) "scene.sce" );
+
+    printf("%d %d %d\n", scene.faces, scene.edges, scene.vertices );
 
     return 0;
 

@@ -1,5 +1,7 @@
 # To avoid git checkout specficed file
-*.a
-*.o
+*.cbp
+*.[ao]
 *.exe
 *~
+/obj
+/bin

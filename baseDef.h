@@ -1,6 +1,8 @@
 #ifndef BASE_DEF_H
 #define BASE_DEF_H
 
+#include <vector>
+
 #include <OpenMesh/Core/IO/MeshIO.hh>
 #include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
 typedef OpenMesh::TriMesh_ArrayKernelT<>  Mesh;
@@ -29,6 +31,7 @@ typedef struct {
 
     //Model
     MODEL *model;
+    std::vector<MODEL> vmodel;  // By using std library
 
     //Axis
     double x_axis;

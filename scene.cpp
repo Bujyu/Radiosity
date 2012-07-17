@@ -1,6 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
+#include <vector>
 
 #include "baseDef.h"
 
@@ -44,17 +46,16 @@ MODEL createModel( char* path, float pos[], float color[] ){
 
 }
 
-void addModel( SCENE *scene, MODEL m ){
+void addModel( MODEL **mlist, MODEL *model ){
 
-    (*scene).model = &m;
-    m.next = NULL;
-
+    model->next = *mlist;
+    *mlist = model;
 
 }
 
 SCENE createScene(){
 
-    SCENE scene;;
+    SCENE scene;
 
     scene.faces = 0;
     scene.edges = 0;
@@ -69,7 +70,8 @@ SCENE createScene(){
 SCENE readScene( char* path ){
 
     SCENE scene = createScene();
-    FILE* file = fopen( path, "r" );
+    MODEL *model;
+    FILE *file = fopen( (char*) path, "r+" );
 
     char mpath[1000];
     float pos[3];
@@ -80,20 +82,42 @@ SCENE readScene( char* path ){
         exit( 0 );
     }
 
-    while( true ){
+    while( 1 ){
 
         fscanf( file, "%s", mpath );
 
-        if( strcmpi( mpath, "#" ) )
+        if( !strcmp( mpath, "#" ) )
             break;
 
         fscanf( file, "%f %f %f", &pos[0], &pos[1], &pos[2] );
         fscanf( file, "%f %f %f", &color[0], &color[1], &color[2] );
 
-        addModel( &scene, createModel( mpath, pos, color ) );
+        model = (MODEL*) malloc( sizeof( MODEL ) );
+        *model = createModel( mpath, pos, color );
+
+        addModel( &scene.model, model );
+        scene.vmodel.push_back( *model );
 
     }
 
+    fclose( file );
+
+    for( ; scene.model ; scene.model = scene.model->next )
+        printf("%d\n", scene.model->mesh.n_faces() );
+
+    for( int n = 0 ; n < scene.vmodel.size() ; n++ )
+        printf("%d\n", scene.vmodel[n].mesh.n_faces() );
+
     return scene;
+
+}
+
+int main(){
+
+    SCENE scene;
+
+    scene = readScene( (char*) "scene.sce" );
+
+    return 0;
 
 }

@@ -30,6 +30,9 @@ typedef struct {
     //Attributes
     int type;
     float color[3];
+    float position[3];
+
+    //Model information
     float center[3];
     float radius;
 

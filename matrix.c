@@ -1,20 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <time.h>
 
-///Matrix based structure
-enum matCreateType{ EMPTY = 0, IDENTITY };
-enum matType{ SQUARE = 0, UNSQUARE };
-
-typedef struct mat{
-
-    double **matrix;
-    enum matType type;
-    int row;
-    int col;
-
-} MAT;
+#include "matrix.h"
 
 MAT mCreate( int row, int col, enum matCreateType type ){
 
@@ -175,18 +163,17 @@ int main(){
     MAT m1;
     MAT m2;
 
-
     int i, j;
     double det;
 
     srand( time( NULL ) );
 
-    m = mCreate( 1000, 1000, EMPTY );
+    m = mCreate( 10, 10, EMPTY );
 
     //Assign value
     for( i = 0 ; i < m.row ; i++ )
         for( j = 0 ; j < m.col ; j++ )
-            m.matrix[i][j] = (double) ( rand() % 1000 ) / 100;
+            m.matrix[i][j] = (double) ( rand() % 10 ) / 10;
 
     det = mDeterminant( m );
 

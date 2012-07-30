@@ -2,7 +2,10 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "vector.h"
 #include "matrix.h"
+
+extern VEC matrix_solution( VEC e, VEC refection, MAT FF );
 
 MAT mCreate( int row, int col, enum matCreateType type ){
 
@@ -157,27 +160,51 @@ double mDeterminant( MAT m ){
 
 }
 
+MAT vecToMat( VEC v ){
+
+    int i;
+    MAT m = mCreate( v.elements, 1, EMPTY );
+
+    for( i = 0 ; i < v.elements ; i++ )
+        m.matrix[i][0] = v.vector[i];
+
+    return m;
+
+}
+
+VEC matToVec( MAT m, int col ){
+
+    int i;
+    VEC v = vCreate( m.row );
+
+    for( i = 0 ; i < m.row ; i++ )
+        v.vector[i] = m.matrix[i][col];
+
+    return v;
+
+}
+
 int main(){
 
-    MAT m;
-    MAT m1;
-    MAT m2;
+    VEC b;
 
-    int i, j;
-    double det;
+    MAT FF = mCreate( 2, 2, EMPTY );
+    VEC e = vCreate( 2 );
+    VEC r = vCreate( 2 );
 
-    srand( time( NULL ) );
+    FF.matrix[0][0] = 0;
+    FF.matrix[0][1] = 0.5;
+    FF.matrix[1][0] = 0.8;
+    FF.matrix[1][1] = 0;
 
-    m = mCreate( 10, 10, EMPTY );
+    e.vector[0] = 0;
+    e.vector[1] = 1;
 
-    //Assign value
-    for( i = 0 ; i < m.row ; i++ )
-        for( j = 0 ; j < m.col ; j++ )
-            m.matrix[i][j] = (double) ( rand() % 10 ) / 10;
+    r.vector[0] = r.vector[1] = 0.9;
 
-    det = mDeterminant( m );
+    b = matrix_solution( e, r, FF );
 
-    printf( "det : %.32lf\n", det );
+    vPrint( b );
 
     return 0;
 

@@ -34,4 +34,8 @@ MAT mTranspose( MAT );
 /// 2. inverse matrix
 double mDeterminant( MAT );
 
+/// Vector to Matrix
+MAT vecToMat( VEC );
+VEC matToVec( MAT, int );
+
 #endif

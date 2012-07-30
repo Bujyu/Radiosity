@@ -39,10 +39,11 @@ void vPrint( VEC v ){
 /// 4. vector length
 /// 5. vector normalize
 /// 6. vector transpose( to matrix )
+/// 7. vector clone
 VEC vAddition( VEC v1, VEC v2 ){
 
-    VEC v;
     int i;
+    VEC v;
 
     if( v1.elements != v2.elements ){
         printf( "Elements is not matching.\n" );
@@ -60,8 +61,8 @@ VEC vAddition( VEC v1, VEC v2 ){
 
 VEC vScalar( VEC v1, double scalar ){
 
-    VEC v;
     int i;
+    VEC v;
 
     v = vCreate( v1.elements );
     for( i = 0 ; i < v1.elements ; i++ )
@@ -123,11 +124,29 @@ MAT vTranspose( VEC v ){
 
 }
 */
-int main(){
 
-    VEC v1, v2;
+VEC vClone( VEC v ){
 
     int i;
+    VEC clone = vCreate( v.elements );
+
+    for( i = 0; i < v.elements ; i++ )
+        clone.vector[i] = v.vector[i];
+
+    return clone;
+
+}
+
+inline void vDestroy( VEC v ){
+
+    free( v.vector );
+
+}
+/*
+int main(){
+
+    int i;
+    VEC v1, v2;
 
     srand( time( NULL ) );
 
@@ -154,3 +173,4 @@ int main(){
     return 0;
 
 }
+*/

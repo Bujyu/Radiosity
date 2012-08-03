@@ -1,4 +1,4 @@
-# To avoid git checkout specficed file
+# To avoid git to checkout specficed file
 *.cbp
 *.[ao]
 *.exe

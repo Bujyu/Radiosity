@@ -1,7 +1,5 @@
 ///To calculate all pairs of mesh's Form Factor
 
-#include <GL/gl.h>
-
 #define SIDE 4096
 enum { top = 0, fornt, right, back, left };
 
@@ -9,8 +7,8 @@ enum { top = 0, fornt, right, back, left };
 void hemiCubeGenrater( int n_cells ){
 
     // Points in cell is 64 points or 4 points per cell
-    int cellSize = SIDE / n_cells;
-    int halfSize = n_cells / 2;
+    double cellSize = SIDE / n_cells;
+    double halfSize = n_cells / 2;
     int i, j, k;
 
     //Top

@@ -351,9 +351,77 @@ void display(){}
 void content( void ){
 
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
+/*
     drawMesh( mesh );
     drawMesh( mesh2 );
+*/
+
+    int n_cells = 2;
+
+    int cellSize = 8 / n_cells;
+    int halfSize = n_cells / 2;
+    int i, j, k;
+
+    //Top
+    for( i = -halfSize ; i < halfSize ; i++ ){
+        for( j = -halfSize ; j < halfSize ; j++ ){
+
+
+            glBegin( GL_LINE_LOOP );
+            glVertex3i(         i * n_cells, halfSize * n_cells, j * n_cells );
+            glVertex3i(         i * n_cells, halfSize * n_cells, ( j + 1 ) * n_cells );
+            glVertex3i( ( i + 1 ) * n_cells, halfSize * n_cells, ( j + 1 ) * n_cells);
+            glVertex3i( ( i + 1 ) * n_cells, halfSize * n_cells, j * n_cells );
+            glVertex3i(         i * n_cells, halfSize * n_cells, j * n_cells );
+            glEnd();
+
+        }
+    }
+
+    //Front and Back
+    for( i = -halfSize ; i < halfSize ; i++ ){
+        for( j = 0; j < halfSize ; j++ ){
+
+            glBegin( GL_LINE_LOOP );
+            glVertex3i(         i * n_cells, j * n_cells        , halfSize * n_cells );
+            glVertex3i(         i * n_cells, ( j + 1 ) * n_cells, halfSize * n_cells );
+            glVertex3i( ( i + 1 ) * n_cells, ( j + 1 ) * n_cells, halfSize * n_cells );
+            glVertex3i( ( i + 1 ) * n_cells, j * n_cells        , halfSize * n_cells );
+            glVertex3i(         i * n_cells, j * n_cells        , halfSize * n_cells );
+            glEnd();
+
+            glBegin( GL_LINE_LOOP );
+            glVertex3i(         i * n_cells, j * n_cells        , -halfSize * n_cells );
+            glVertex3i(         i * n_cells, ( j + 1 ) * n_cells, -halfSize * n_cells );
+            glVertex3i( ( i + 1 ) * n_cells, ( j + 1 ) * n_cells, -halfSize * n_cells );
+            glVertex3i( ( i + 1 ) * n_cells, j * n_cells        , -halfSize * n_cells );
+            glVertex3i(         i * n_cells, j * n_cells        , -halfSize * n_cells );
+            glEnd();
+
+        }
+    }
+
+    // Right and Left
+    for( i = 0; i < halfSize ; i++ ){
+        for( j = -halfSize; j < halfSize ; j++ ){
+
+            glBegin( GL_LINE_LOOP );
+            glVertex3i( halfSize * n_cells,         i * n_cells, j * n_cells         );
+            glVertex3i( halfSize * n_cells,         i * n_cells, ( j + 1 ) * n_cells );
+            glVertex3i( halfSize * n_cells, ( i + 1 ) * n_cells, ( j + 1 ) * n_cells );
+            glVertex3i( halfSize * n_cells, ( i + 1 ) * n_cells, j * n_cells         );
+            glVertex3i( halfSize * n_cells,         i * n_cells, j * n_cells         );
+            glEnd();
+
+            glBegin( GL_LINE_LOOP );
+            glVertex3i( -halfSize * n_cells,         i * n_cells, j * n_cells         );
+            glVertex3i( -halfSize * n_cells,         i * n_cells, ( j + 1 ) * n_cells );
+            glVertex3i( -halfSize * n_cells, ( i + 1 ) * n_cells, ( j + 1 ) * n_cells );
+            glVertex3i( -halfSize * n_cells, ( i + 1 ) * n_cells, j * n_cells         );
+            glVertex3i( -halfSize * n_cells,         i * n_cells, j * n_cells         );
+            glEnd();
+        }
+    }
 
 	glutSwapBuffers();
 

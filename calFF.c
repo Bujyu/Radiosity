@@ -10,17 +10,17 @@ void hemiCubeGenrater( int n_cells ){
 
     // Points in cell is 64 points or 4 points per cell
     int cellSize = SIDE / n_cells;
-    int halfSize = cellSize / 2;
+    int halfSize = n_cells / 2;
     int i, j, k;
 
     //Top
     for( i = -halfSize ; i < halfSize ; i++ ){
         for( j = -halfSize ; j < halfSize ; j++ ){
 
-            addPoint(         i * cellSize, halfSize, j * cellSize );
-            addPoint(         i * cellSize, halfSize, ( j + 1 ) * cellSize );
-            addPoint( ( i + 1 ) * cellSize, halfSize, ( j + 1 ) * cellSize );
-            addPoint( ( i + 1 ) * cellSize, halfSize, j * cellSize );
+            addPoint(         i * cellSize, halfSize * cellSize, j * cellSize );
+            addPoint(         i * cellSize, halfSize * cellSize, ( j + 1 ) * cellSize );
+            addPoint( ( i + 1 ) * cellSize, halfSize * cellSize, ( j + 1 ) * cellSize);
+            addPoint( ( i + 1 ) * cellSize, halfSize * cellSize, j * cellSize );
             addPatch();
 
         }
@@ -30,16 +30,16 @@ void hemiCubeGenrater( int n_cells ){
     for( i = -halfSize ; i < halfSize ; i++ ){
         for( j = 0; j < halfSize ; j++ ){
 
-            addPoint(         i * cellSize, j * cellSize        , halfSize );
-            addPoint(         i * cellSize, ( j + 1 ) * cellSize, halfSize );
-            addPoint( ( i + 1 ) * cellSize, ( j + 1 ) * cellSize, halfSize );
-            addPoint( ( i + 1 ) * cellSize, j * cellSize        , halfSize );
+            addPoint(         i * cellSize, j * cellSize        , halfSize * cellSize );
+            addPoint(         i * cellSize, ( j + 1 ) * cellSize, halfSize * cellSize );
+            addPoint( ( i + 1 ) * cellSize, ( j + 1 ) * cellSize, halfSize * cellSize );
+            addPoint( ( i + 1 ) * cellSize, j * cellSize        , halfSize * cellSize );
             addPatch();
 
-            addPoint(         i * cellSize, j * cellSize        , -halfSize );
-            addPoint(         i * cellSize, ( j + 1 ) * cellSize, -halfSize );
-            addPoint( ( i + 1 ) * cellSize, ( j + 1 ) * cellSize, -halfSize );
-            addPoint( ( i + 1 ) * cellSize, j * cellSize        , -halfSize );
+            addPoint(         i * cellSize, j * cellSize        , -halfSize * cellSize );
+            addPoint(         i * cellSize, ( j + 1 ) * cellSize, -halfSize * cellSize );
+            addPoint( ( i + 1 ) * cellSize, ( j + 1 ) * cellSize, -halfSize * cellSize );
+            addPoint( ( i + 1 ) * cellSize, j * cellSize        , -halfSize * cellSize );
             addPatch();
 
         }
@@ -49,16 +49,16 @@ void hemiCubeGenrater( int n_cells ){
     for( i = 0; i < halfSize ; i++ ){
         for( j = -halfSize; j < halfSize ; j++ ){
 
-            addPoint( halfSize,         i * cellSize, j * cellSize         );
-            addPoint( halfSize,         i * cellSize, ( j + 1 ) * cellSize );
-            addPoint( halfSize, ( i + 1 ) * cellSize, ( j + 1 ) * cellSize );
-            addPoint( halfSize, ( i + 1 ) * cellSize, j * cellSize         );
+            addPoint( halfSize * cellSize,         i * cellSize, j * cellSize         );
+            addPoint( halfSize * cellSize,         i * cellSize, ( j + 1 ) * cellSize );
+            addPoint( halfSize * cellSize, ( i + 1 ) * cellSize, ( j + 1 ) * cellSize );
+            addPoint( halfSize * cellSize, ( i + 1 ) * cellSize, j * cellSize         );
             addPatch();
 
-            addPoint( -halfSize,         i * cellSize, j * cellSize         );
-            addPoint( -halfSize,         i * cellSize, ( j + 1 ) * cellSize );
-            addPoint( -halfSize, ( i + 1 ) * cellSize, ( j + 1 ) * cellSize );
-            addPoint( -halfSize, ( i + 1 ) * cellSize, j * cellSize         );
+            addPoint( -halfSize * cellSize,         i * cellSize, j * cellSize         );
+            addPoint( -halfSize * cellSize,         i * cellSize, ( j + 1 ) * cellSize );
+            addPoint( -halfSize * cellSize, ( i + 1 ) * cellSize, ( j + 1 ) * cellSize );
+            addPoint( -halfSize * cellSize, ( i + 1 ) * cellSize, j * cellSize         );
             addPatch();
 
         }

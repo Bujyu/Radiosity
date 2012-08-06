@@ -356,9 +356,9 @@ void content( void ){
     drawMesh( mesh2 );
 */
 
-    int n_cells = 2;
+    int n_cells = 8;
 
-    int cellSize = 8 / n_cells;
+    int cellSize = 16 / n_cells;
     int halfSize = n_cells / 2;
     int i, j, k;
 
@@ -368,11 +368,11 @@ void content( void ){
 
 
             glBegin( GL_LINE_LOOP );
-            glVertex3i(         i * n_cells, halfSize * n_cells, j * n_cells );
-            glVertex3i(         i * n_cells, halfSize * n_cells, ( j + 1 ) * n_cells );
-            glVertex3i( ( i + 1 ) * n_cells, halfSize * n_cells, ( j + 1 ) * n_cells);
-            glVertex3i( ( i + 1 ) * n_cells, halfSize * n_cells, j * n_cells );
-            glVertex3i(         i * n_cells, halfSize * n_cells, j * n_cells );
+            glVertex3i(         i * cellSize, halfSize * cellSize, j * cellSize );
+            glVertex3i(         i * cellSize, halfSize * cellSize, ( j + 1 ) * cellSize );
+            glVertex3i( ( i + 1 ) * cellSize, halfSize * cellSize, ( j + 1 ) * cellSize);
+            glVertex3i( ( i + 1 ) * cellSize, halfSize * cellSize, j * cellSize );
+            glVertex3i(         i * cellSize, halfSize * cellSize, j * cellSize );
             glEnd();
 
         }
@@ -383,19 +383,19 @@ void content( void ){
         for( j = 0; j < halfSize ; j++ ){
 
             glBegin( GL_LINE_LOOP );
-            glVertex3i(         i * n_cells, j * n_cells        , halfSize * n_cells );
-            glVertex3i(         i * n_cells, ( j + 1 ) * n_cells, halfSize * n_cells );
-            glVertex3i( ( i + 1 ) * n_cells, ( j + 1 ) * n_cells, halfSize * n_cells );
-            glVertex3i( ( i + 1 ) * n_cells, j * n_cells        , halfSize * n_cells );
-            glVertex3i(         i * n_cells, j * n_cells        , halfSize * n_cells );
+            glVertex3i(         i * cellSize, j * cellSize        , halfSize * cellSize );
+            glVertex3i(         i * cellSize, ( j + 1 ) * cellSize, halfSize * cellSize );
+            glVertex3i( ( i + 1 ) * cellSize, ( j + 1 ) * cellSize, halfSize * cellSize );
+            glVertex3i( ( i + 1 ) * cellSize, j * cellSize        , halfSize * cellSize );
+            glVertex3i(         i * cellSize, j * cellSize        , halfSize * cellSize );
             glEnd();
 
             glBegin( GL_LINE_LOOP );
-            glVertex3i(         i * n_cells, j * n_cells        , -halfSize * n_cells );
-            glVertex3i(         i * n_cells, ( j + 1 ) * n_cells, -halfSize * n_cells );
-            glVertex3i( ( i + 1 ) * n_cells, ( j + 1 ) * n_cells, -halfSize * n_cells );
-            glVertex3i( ( i + 1 ) * n_cells, j * n_cells        , -halfSize * n_cells );
-            glVertex3i(         i * n_cells, j * n_cells        , -halfSize * n_cells );
+            glVertex3i(         i * cellSize, j * cellSize        , -halfSize * cellSize );
+            glVertex3i(         i * cellSize, ( j + 1 ) * cellSize, -halfSize * cellSize );
+            glVertex3i( ( i + 1 ) * cellSize, ( j + 1 ) * cellSize, -halfSize * cellSize );
+            glVertex3i( ( i + 1 ) * cellSize, j * cellSize        , -halfSize * cellSize );
+            glVertex3i(         i * cellSize, j * cellSize        , -halfSize * cellSize );
             glEnd();
 
         }
@@ -406,19 +406,19 @@ void content( void ){
         for( j = -halfSize; j < halfSize ; j++ ){
 
             glBegin( GL_LINE_LOOP );
-            glVertex3i( halfSize * n_cells,         i * n_cells, j * n_cells         );
-            glVertex3i( halfSize * n_cells,         i * n_cells, ( j + 1 ) * n_cells );
-            glVertex3i( halfSize * n_cells, ( i + 1 ) * n_cells, ( j + 1 ) * n_cells );
-            glVertex3i( halfSize * n_cells, ( i + 1 ) * n_cells, j * n_cells         );
-            glVertex3i( halfSize * n_cells,         i * n_cells, j * n_cells         );
+            glVertex3i( halfSize * cellSize,         i * cellSize, j * cellSize         );
+            glVertex3i( halfSize * cellSize,         i * cellSize, ( j + 1 ) * cellSize );
+            glVertex3i( halfSize * cellSize, ( i + 1 ) * cellSize, ( j + 1 ) * cellSize );
+            glVertex3i( halfSize * cellSize, ( i + 1 ) * cellSize, j * cellSize         );
+            glVertex3i( halfSize * cellSize,         i * cellSize, j * cellSize         );
             glEnd();
 
             glBegin( GL_LINE_LOOP );
-            glVertex3i( -halfSize * n_cells,         i * n_cells, j * n_cells         );
-            glVertex3i( -halfSize * n_cells,         i * n_cells, ( j + 1 ) * n_cells );
-            glVertex3i( -halfSize * n_cells, ( i + 1 ) * n_cells, ( j + 1 ) * n_cells );
-            glVertex3i( -halfSize * n_cells, ( i + 1 ) * n_cells, j * n_cells         );
-            glVertex3i( -halfSize * n_cells,         i * n_cells, j * n_cells         );
+            glVertex3i( -halfSize * cellSize,         i * cellSize, j * cellSize         );
+            glVertex3i( -halfSize * cellSize,         i * cellSize, ( j + 1 ) * cellSize );
+            glVertex3i( -halfSize * cellSize, ( i + 1 ) * cellSize, ( j + 1 ) * cellSize );
+            glVertex3i( -halfSize * cellSize, ( i + 1 ) * cellSize, j * cellSize         );
+            glVertex3i( -halfSize * cellSize,         i * cellSize, j * cellSize         );
             glEnd();
         }
     }

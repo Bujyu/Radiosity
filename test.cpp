@@ -366,13 +366,12 @@ void content( void ){
     for( i = -halfSize ; i < halfSize ; i++ ){
         for( j = -halfSize ; j < halfSize ; j++ ){
 
-
-            glBegin( GL_LINE_LOOP );
+            glPolygonMode( GL_BACK, GL_LINE );
+            glBegin( GL_POLYGON );
             glVertex3f( (double)i * cellSize, halfSize * cellSize, (double)j * cellSize );
             glVertex3f( (double)i * cellSize, halfSize * cellSize, (double)( j + 1 ) * cellSize );
             glVertex3f( (double)( i + 1 ) * cellSize, halfSize * cellSize, (double)( j + 1 ) * cellSize);
             glVertex3f( (double)( i + 1 ) * cellSize, halfSize * cellSize, (double)j * cellSize );
-            glVertex3f( (double)i * cellSize, halfSize * cellSize, (double)j * cellSize );
             glEnd();
 
         }
@@ -382,20 +381,18 @@ void content( void ){
     for( i = -halfSize ; i < halfSize ; i++ ){
         for( j = 0; j < halfSize ; j++ ){
 
-            glBegin( GL_LINE_LOOP );
-            glVertex3f( (double)        i * cellSize, (double)j * cellSize        , (double)halfSize * cellSize );
-            glVertex3f( (double)        i * cellSize, (double)( j + 1 ) * cellSize, (double)halfSize * cellSize );
-            glVertex3f( (double)( i + 1 ) * cellSize, (double)( j + 1 ) * cellSize, (double)halfSize * cellSize );
+            glBegin( GL_POLYGON );
             glVertex3f( (double)( i + 1 ) * cellSize, (double)j * cellSize        , (double)halfSize * cellSize );
+            glVertex3f( (double)( i + 1 ) * cellSize, (double)( j + 1 ) * cellSize, (double)halfSize * cellSize );
+            glVertex3f( (double)        i * cellSize, (double)( j + 1 ) * cellSize, (double)halfSize * cellSize );
             glVertex3f( (double)        i * cellSize, (double)j * cellSize        , (double)halfSize * cellSize );
             glEnd();
 
-            glBegin( GL_LINE_LOOP );
+            glBegin( GL_POLYGON );
             glVertex3f( (double)        i * cellSize, (double)j * cellSize        , (double)-halfSize * cellSize );
             glVertex3f( (double)        i * cellSize, (double)( j + 1 ) * cellSize, (double)-halfSize * cellSize );
             glVertex3f( (double)( i + 1 ) * cellSize, (double)( j + 1 ) * cellSize, (double)-halfSize * cellSize );
             glVertex3f( (double)( i + 1 ) * cellSize, (double)j * cellSize        , (double)-halfSize * cellSize );
-            glVertex3f( (double)        i * cellSize, (double)j * cellSize        , (double)-halfSize * cellSize );
             glEnd();
 
         }
@@ -405,20 +402,18 @@ void content( void ){
     for( i = 0; i < halfSize ; i++ ){
         for( j = -halfSize; j < halfSize ; j++ ){
 
-            glBegin( GL_LINE_LOOP );
-            glVertex3f( (double)halfSize * cellSize, (double)        i * cellSize, (double)j * cellSize         );
-            glVertex3f( (double)halfSize * cellSize, (double)        i * cellSize, (double)( j + 1 ) * cellSize );
-            glVertex3f( (double)halfSize * cellSize, (double)( i + 1 ) * cellSize, (double)( j + 1 ) * cellSize );
+            glBegin( GL_POLYGON );
             glVertex3f( (double)halfSize * cellSize, (double)( i + 1 ) * cellSize, (double)j * cellSize         );
+            glVertex3f( (double)halfSize * cellSize, (double)( i + 1 ) * cellSize, (double)( j + 1 ) * cellSize );
+            glVertex3f( (double)halfSize * cellSize, (double)        i * cellSize, (double)( j + 1 ) * cellSize );
             glVertex3f( (double)halfSize * cellSize, (double)        i * cellSize, (double)j * cellSize         );
             glEnd();
 
-            glBegin( GL_LINE_LOOP );
+            glBegin( GL_POLYGON );
             glVertex3f( (double)-halfSize * cellSize, (double)        i * cellSize, (double)j * cellSize         );
             glVertex3f( (double)-halfSize * cellSize, (double)        i * cellSize, (double)( j + 1 ) * cellSize );
             glVertex3f( (double)-halfSize * cellSize, (double)( i + 1 ) * cellSize, (double)( j + 1 ) * cellSize );
             glVertex3f( (double)-halfSize * cellSize, (double)( i + 1 ) * cellSize, (double)j * cellSize         );
-            glVertex3f( (double)-halfSize * cellSize, (double)        i * cellSize, (double)j * cellSize         );
             glEnd();
         }
     }

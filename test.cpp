@@ -324,6 +324,55 @@ int main( int argc, char **argv ){
 }
 */
 
+void axis(){
+
+    glPushAttrib( GL_ALL_ATTRIB_BITS );
+
+    glLineWidth( 3.0 );
+
+    glColor3f( 1.0, 0.0, 0.0 );
+    glBegin( GL_LINES );
+        glVertex3f( 0.0, 0.0, 0.0 );
+        glVertex3f( 0.1, 0.0, 0.0 );
+    glEnd();
+
+    glColor3f( 0.0, 1.0, 0.0 );
+    glBegin( GL_LINES );
+        glVertex3f( 0.0, 0.0, 0.0 );
+        glVertex3f( 0.0, 0.1, 0.0 );
+    glEnd();
+
+    glColor3f( 0.0, 0.0, 1.0 );
+    glBegin( GL_LINES );
+        glVertex3f( 0.0, 0.0, 0.0 );
+        glVertex3f( 0.0, 0.0, 0.1 );
+    glEnd();
+
+    glPopAttrib();
+
+}
+
+void interpolation( double p0[], double p1[], double p2[], double u, double v ){
+
+    double ipt[3];
+
+    ipt[0] = ( 1.0 - u - v ) * p0[0] + u * p1[0] + v * p2[0];
+    ipt[1] = ( 1.0 - u - v ) * p0[1] + u * p1[1] + v * p2[1];
+    ipt[2] = ( 1.0 - u - v ) * p0[2] + u * p1[2] + v * p2[2];
+
+    glBegin( GL_POINTS );
+        glVertex3f( ipt[0], ipt[1], ipt[2] );
+    glEnd();
+
+}
+
+double len( double p0[], double p1[] ){
+
+    return sqrt( pow( p1[0] - p0[0], 2 ) + pow( p1[1] - p0[1], 2 ) + pow( p1[2] - p0[2], 2 ) );
+
+
+}
+
 void init(){
 
     float center[3], radius = 0.0;
@@ -331,8 +380,8 @@ void init(){
     //Depth
     glEnable( GL_DEPTH_TEST );
 
-    readMesh( &mesh, (char*) "Models/five-face.off", center, radius );
-    readMesh( &mesh2, (char*) "Models/mushroom.off", center, radius );
+    //readMesh( &mesh, (char*) "Models/five-face.off", center, radius );
+    //readMesh( &mesh2, (char*) "Models/mushroom.off", center, radius );
 
     //Initial color
     glClearColor( 0.0, 0.0, 0.0, 1.0 );
@@ -355,7 +404,7 @@ void content( void ){
     drawMesh( mesh );
     drawMesh( mesh2 );
 */
-
+/*
     int n_cells = 8;
 
     double cellSize = (double) 2 / n_cells;
@@ -417,6 +466,32 @@ void content( void ){
             glEnd();
         }
     }
+*/
+
+    double u, v;
+
+    double p0[] = { 0.0, 0.0, 0.5 };
+    double p1[] = { 0.1, 0.25, 0.1 };
+    double p2[] = { -0.25, 0.3, -1.0 };
+
+    axis();
+
+    u = 0.0;
+    while( u < 1.0 ){
+
+        v = 0.0;
+        while( v < 1.0 ){
+
+            if( u + v <= 1.0 )
+                interpolation( p0, p1, p2, u, v );
+            v += len( p0, p1 ) / 500;
+
+        }
+        u += len( p0, p2 ) / 500;
+
+    }
+
+    printf("%lf %lf\n", len( p0, p1 ), len( p0, p2 ) );
 
 	glutSwapBuffers();
 

@@ -50,7 +50,7 @@ double calCellFF( SURFACE_3D face, VEC normal ){
 
     int i, j;
     double dA, du, dv;
-    double Area;
+    double area;
     double FF = 0.0;
 
     // Center Point & Normal Vector
@@ -59,7 +59,8 @@ double calCellFF( SURFACE_3D face, VEC normal ){
     nc.vector[1] = 1.0;
 
     // Calculate Area
-    Area = ;
+    area = surfaceArea( face );
+    dA = surfaceArea( face ) / ( 0.001 * 0.001 );
 
     for( du = 0.0 ; du < 1.0 ; du += 0.001 ){
         for( dv = 0.0 ; dv < 1.0 ; dv += 0.001 ){
@@ -67,7 +68,7 @@ double calCellFF( SURFACE_3D face, VEC normal ){
                          interpolation( face.plist[0], face.plist[1], face.plist[2], face.plist[3], du, dv  ), normal,
                          dA );
 
-    return FF / Area;
+    return FF / area;
 
 }
 

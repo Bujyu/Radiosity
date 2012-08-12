@@ -2,6 +2,11 @@
 #define _GROMETRIC_H
 
 #include <vector>
+#include "vector.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // Data type definition
 // 2-Dimension
@@ -66,11 +71,19 @@ typedef struct{
 //Function implement
 POINT_3D addPoint3D( double x, double y, double z );
 VEC vectorPP( POINT_3D st, POINT_3D ed );
+inline double lengthPP( POINT_3D a, POINT_3D b );
 
 SURFACE_3D addSurface3D( int amount, ... );
+double triangleArea( SURFACE_3D face );
+double squareArea( SURFACE_3D face );
+double surfaceArea( SURFACE_3D face );
 
 PATCH createPatch();
 inline void addPatch( PATCH patch, SURFACE_3D face );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

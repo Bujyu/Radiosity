@@ -89,7 +89,7 @@ double vDot( VEC v1, VEC v2 ){
 
 }
 
-inline double vCos( VEC v1, VEC v2 ){
+double vCos( VEC v1, VEC v2 ){
     return vDot( v1, v2 ) / ( vLength( v1 ) * vLength( v2 ) );
 }
 
@@ -142,6 +142,8 @@ inline void vDestroy( VEC v ){
     free( v.vector );
 
 }
+
+
 /*
 int main(){
 

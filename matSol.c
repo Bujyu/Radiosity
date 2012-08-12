@@ -28,31 +28,31 @@ int converge( VEC b, VEC e, VEC reflection, MAT FF, double boundary ){
 
 }
 
-VEC matrix_solution( VEC e, VEC reflection, MAT FF ){
+VEC matrix_solution( VEC emission, VEC reflection, MAT FF ){
 
-    VEC x = vClone( e );
-    VEC nx = vCreate( e.elements );
+    VEC x = vClone( emission );
+    VEC nx = vCreate( emission.elements );
     int i, j, k;
     double r;
 
     k = 0;
     do{
 
-        for( i = 0 ; i < e.elements ; i++ ){
+        for( i = 0 ; i < emission.elements ; i++ ){
             r = 0;
-            for( j = 0 ; j < e.elements ; j++ ){
+            for( j = 0 ; j < emission.elements ; j++ ){
                 if( i != j )
                     r += reflection.vector[i] * FF.matrix[i][j] * x.vector[j];
             }
-            nx.vector[i] = e.vector[i] - r;
+            nx.vector[i] = emission.vector[i] - r;
         }
         x = vClone( nx );
 
         k++;
 
-    }while( converge( x, e, reflection, FF, 0.00001 ) );
+    }while( converge( x, emission, reflection, FF, 0.00001 ) );
 
-    printf("k = %d\n", k);
+    //printf("k = %d\n", k);
 
     return x;
 

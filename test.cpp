@@ -352,24 +352,9 @@ void axis(){
 
 }
 
-void interpolation( double p0[], double p1[], double p2[], double u, double v ){
-
-    double ipt[3];
-
-    ipt[0] = ( 1.0 - u - v ) * p0[0] + u * p1[0] + v * p2[0];
-    ipt[1] = ( 1.0 - u - v ) * p0[1] + u * p1[1] + v * p2[1];
-    ipt[2] = ( 1.0 - u - v ) * p0[2] + u * p1[2] + v * p2[2];
-
-    glBegin( GL_POINTS );
-        glVertex3f( ipt[0], ipt[1], ipt[2] );
-    glEnd();
-
-}
-
 double len( double p0[], double p1[] ){
 
     return sqrt( pow( p1[0] - p0[0], 2 ) + pow( p1[1] - p0[1], 2 ) + pow( p1[2] - p0[2], 2 ) );
-
 
 }
 
@@ -476,6 +461,10 @@ void content( void ){
 
     axis();
 
+
+    // Find biggest angle and split triangle
+
+    // Interploate the triangle
     u = 0.0;
     while( u < 1.0 ){
 
@@ -484,10 +473,10 @@ void content( void ){
 
             if( u + v <= 1.0 )
                 interpolation( p0, p1, p2, u, v );
-            v += len( p0, p1 ) / 500;
+            v += 1 ? 0.001 : len( p0, p1 ) / 500;
 
         }
-        u += len( p0, p2 ) / 500;
+        u += 1 ? 0.001 : len( p0, p2 ) / 500;
 
     }
 

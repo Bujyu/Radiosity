@@ -14,7 +14,7 @@ VEC vCreate( int elements ){
     v.vector = (double*) malloc( sizeof( double ) * elements );
 
     for( i = 0 ; i < elements ; i++ )
-        v.vector[i] = 0;
+        v.vector[i] = 0.0;
 
     return v;
 

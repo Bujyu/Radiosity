@@ -8,8 +8,8 @@ typedef struct vec{
 
 } VEC;
 
-        VEC     vCreate     ( int elements );
-        void    vPrint      ( VEC v );
+VEC vCreate( int elements );
+void vPrint( VEC v );
 
 /// Basic Function
 /// 1. vector addition
@@ -27,6 +27,6 @@ inline  double  vCos        ( VEC v1, VEC v2 );
 inline  VEC     vNormalize  ( VEC v );
 //MAT     vTranspose  ( VEC v );
         VEC     vClone      ( VEC v );
-inline  void     vDestroy    ( VEC v );
+inline  void    vDestroy    ( VEC v );
 
 #endif

@@ -9,6 +9,9 @@
 #include <gl/gluit.h>
 #include <gl.hh>
 
+extern void hemiCubeGenrater();
+extern void drawHemiCube();
+
 typedef OpenMesh::TriMesh_ArrayKernelT<>  Mesh;
 
 Mesh mesh;
@@ -352,15 +355,11 @@ void axis(){
 
 }
 
-double len( double p0[], double p1[] ){
-
-    return sqrt( pow( p1[0] - p0[0], 2 ) + pow( p1[1] - p0[1], 2 ) + pow( p1[2] - p0[2], 2 ) );
-
-}
-
 void init(){
 
     float center[3], radius = 0.0;
+
+    hemiCubeGenrater();
 
     //Depth
     glEnable( GL_DEPTH_TEST );
@@ -453,34 +452,7 @@ void content( void ){
     }
 */
 
-    double u, v;
-
-    double p0[] = { 0.0, 0.0, 0.5 };
-    double p1[] = { 0.1, 0.25, 0.1 };
-    double p2[] = { -0.25, 0.3, -1.0 };
-
-    axis();
-
-
-    // Find biggest angle and split triangle
-
-    // Interploate the triangle
-    u = 0.0;
-    while( u < 1.0 ){
-
-        v = 0.0;
-        while( v < 1.0 ){
-
-            if( u + v <= 1.0 )
-                interpolation( p0, p1, p2, u, v );
-            v += 1 ? 0.001 : len( p0, p1 ) / 500;
-
-        }
-        u += 1 ? 0.001 : len( p0, p2 ) / 500;
-
-    }
-
-    printf("%lf %lf\n", len( p0, p1 ), len( p0, p2 ) );
+    drawHemiCube();
 
 	glutSwapBuffers();
 

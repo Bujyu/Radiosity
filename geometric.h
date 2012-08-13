@@ -64,22 +64,23 @@ typedef struct{
     //SURFACE_3D *flist;
     //SURFACE_3D *fend;
 
-    int n_faces;
+    int n_face;
 
 } PATCH;
 
 //Function implement
 POINT_3D addPoint3D( double x, double y, double z );
 VEC vectorPP( POINT_3D st, POINT_3D ed );
-inline double lengthPP( POINT_3D a, POINT_3D b );
+double lengthPP( POINT_3D a, POINT_3D b );
 
 SURFACE_3D addSurface3D( int amount, ... );
+POINT_3D surfaceCenter( SURFACE_3D face );
 double triangleArea( SURFACE_3D face );
 double squareArea( SURFACE_3D face );
 double surfaceArea( SURFACE_3D face );
 
 PATCH createPatch();
-inline void addPatch( PATCH patch, SURFACE_3D face );
+void addPatch( PATCH *patch, SURFACE_3D face );
 
 #ifdef __cplusplus
 }

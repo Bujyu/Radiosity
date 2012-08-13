@@ -4,7 +4,6 @@
 #include <cmath>
 
 #include <vector>
-
 #include "geometric.h"
 
 // Point
@@ -20,7 +19,26 @@ POINT_3D addPoint3D( double x, double y, double z ){
 
 }
 
-inline double lengthPP( POINT_3D a, POINT_3D b ){
+POINT_3D surfaceCenter( SURFACE_3D face ){
+
+    int n;
+    POINT_3D center = addPoint3D( 0, 0, 0 );
+
+    for( n = 0 ; n < face.n_point ; n++ ){
+        center.x += face.plist[n].x;
+        center.y += face.plist[n].y;
+        center.z += face.plist[n].z;
+    }
+
+    center.x /= face.n_point;
+    center.y /= face.n_point;
+    center.z /= face.n_point;
+
+    return center;
+
+}
+
+double lengthPP( POINT_3D a, POINT_3D b ){
     return sqrt( pow( b.x - a.x, 2 ) + pow( b.y - a.y, 2 ) + pow( b.z - a.z, 2 ) );
 }
 
@@ -103,18 +121,20 @@ double surfaceArea( SURFACE_3D face ){
 PATCH createPatch(){
 
     PATCH p;
+    p.n_face = 0;
 
-    p.n_faces = 0;
     return p;
 
 }
 
-inline void addPatch( PATCH patch, SURFACE_3D face ){
+void addPatch( PATCH *patch, SURFACE_3D face ){
 
-    patch.flist.push_back( face );
+    (*patch).flist.push_back( face );
+    (*patch).n_face++;
 
 }
 
+/*
 int main(){
 
     POINT_3D a, b, c, d;
@@ -136,5 +156,5 @@ int main(){
     return 0;
 
 }
-
+*/
 

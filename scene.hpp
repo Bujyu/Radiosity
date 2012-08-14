@@ -3,9 +3,14 @@
 
 #include <vector>
 
-#include <OpenMesh/Core/IO/MeshIO.hh>
-#include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
-typedef OpenMesh::TriMesh_ArrayKernelT<>  Mesh;
+#include "mesh.hpp"
+
+#define SET( m, data ) \
+        { \
+        m[0] = data[0];\
+        m[1] = data[1];\
+        m[2] = data[2];\
+        }
 
 typedef struct model {
 
@@ -31,10 +36,9 @@ typedef struct model {
 } MODEL;
 
 //Scene
-typedef struct {
+typedef struct scene{
 
     //Model
-    MODEL *model;
     std::vector<MODEL> vmodel;  // By using std library
 
     //Axis
@@ -49,5 +53,10 @@ typedef struct {
 
 } SCENE;
 
+
+MODEL createModel( char* path, float pos[], float color[] );
+
+SCENE createScene();
+SCENE readScene( char* path );
 
 #endif

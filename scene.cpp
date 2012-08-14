@@ -4,38 +4,17 @@
 
 #include <vector>
 
-#include "baseDef.h"
-
-#define SET( m, data ) \
-        { \
-        m[0] = data[0];\
-        m[1] = data[1];\
-        m[2] = data[2];\
-        }
+#include "scene.hpp"
 
 MODEL createModel( char* path, float pos[], float color[] ){
 
     MODEL m;
-    float center[3], radius;
+    float center[3], radius = 0.0;
 
-    OpenMesh::IO::read_mesh( m.mesh, path );
-
-    Mesh::ConstVertexIter	v_it( m.mesh.vertices_begin() ),
-                            v_end( m.mesh.vertices_end() );
-	Mesh::Point             bbMin, bbMax;
-
-	bbMin = bbMax = m.mesh.point(v_it);  // accessing the Point of a vertex
-	for (; v_it!=v_end; ++v_it){
-		bbMin.minimize( m.mesh.point(v_it));
-		bbMax.maximize( m.mesh.point(v_it));
-	}
-
-	for (int i = 0; i < 3; i++)
-		center[i] = (bbMin[i] +bbMax[i])/2;
-	radius = (bbMax-bbMin).norm()/2;  // set radius as half of bbox diagonal
+    readMesh( &(m.mesh), path, center, radius );
 
     //Update Face Normal
-	m.mesh.request_face_normals();
+    m.mesh.request_face_normals();
 	m.mesh.update_normals();
 
     //Attribute
@@ -53,13 +32,6 @@ MODEL createModel( char* path, float pos[], float color[] ){
 
 }
 
-void addModel( MODEL **mlist, MODEL *model ){
-
-    model->next = *mlist;
-    *mlist = model;
-
-}
-
 SCENE createScene(){
 
     SCENE scene;
@@ -68,8 +40,6 @@ SCENE createScene(){
     scene.edges = 0;
     scene.vertices = 0;
 
-    scene.model = NULL;
-
     return scene;
 
 }
@@ -77,7 +47,7 @@ SCENE createScene(){
 SCENE readScene( char* path ){
 
     SCENE scene = createScene();
-    MODEL *model;
+    MODEL model;
     FILE *file = fopen( (char*) path, "r+" );
 
     char mpath[1000];
@@ -99,16 +69,13 @@ SCENE readScene( char* path ){
         fscanf( file, "%f %f %f", &pos[0], &pos[1], &pos[2] );
         fscanf( file, "%f %f %f", &color[0], &color[1], &color[2] );
 
-        model = (MODEL*) malloc( sizeof( MODEL ) );
-        *model = createModel( mpath, pos, color );
-
-        addModel( &scene.model, model );
-        scene.vmodel.push_back( *model );
+        model = createModel( mpath, pos, color );
+        scene.vmodel.push_back( model );
 
         //Update scene attributes
-        scene.faces += (*model).faces;
-        scene.edges += (*model).edges;
-        scene.vertices += (*model).vertices;
+        scene.faces += model.faces;
+        scene.edges += model.edges;
+        scene.vertices += model.vertices;
 
     }
 
@@ -118,13 +85,67 @@ SCENE readScene( char* path ){
 
 }
 
+int getMeshHandle( int n, SCENE scene ){
+
+    int i;
+
+    if( n > scene.faces )
+        exit( -1 );
+
+    for( i = 0 ; i < (int) scene.vmodel.size() ; i++ ){
+        if( n < scene.vmodel[i].faces )
+            return i;
+        else
+            n -= scene.vmodel[i].faces;
+    }
+
+    return -1;
+
+}
+
+Mesh::FaceHandle getFaceHandle( int n, SCENE scene ){
+
+    int i;
+
+    if( n > scene.faces )
+        exit( -1 );
+
+    for( i = 0 ; i < (int) scene.vmodel.size() ; i++ ){
+        if( n < scene.vmodel[i].faces )
+            return scene.vmodel[i].mesh.face_handle( n );
+        else
+            n -= scene.vmodel[i].faces;
+    }
+
+    return scene.vmodel[0].mesh.face_handle( 0 );;
+
+}
+
 int main(){
 
+    int i;
+    int num;
     SCENE scene;
+    Mesh::FaceHandle f;
+    Mesh::ConstFaceVertexIter   fv_it;
 
     scene = readScene( (char*) "scene.sce" );
 
-    printf("%d %d %d\n", scene.faces, scene.edges, scene.vertices );
+    std::cout << scene.faces << std::endl;
+
+    for( i = 0 ; i < scene.faces ; i++ ){
+
+        num = getMeshHandle( i, scene );
+        f = getFaceHandle( i, scene );
+
+        fv_it = scene.vmodel[num].mesh.cfv_iter( f );;
+        std::cout << scene.vmodel[num].mesh.point( fv_it ) << std::endl;
+        ++fv_it;
+        std::cout << scene.vmodel[num].mesh.point( fv_it ) << std::endl;
+        ++fv_it;
+        std::cout << scene.vmodel[num].mesh.point( fv_it ) << std::endl << std::endl;
+
+    }
 
     return 0;
 

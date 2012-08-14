@@ -52,6 +52,7 @@ typedef struct{
 
     //Addition information
     double FF;
+    int visited;
 
 } SURFACE_3D;
 
@@ -71,6 +72,7 @@ typedef struct{
 //Function implement
 POINT_3D addPoint3D( double x, double y, double z );
 VEC vectorPP( POINT_3D st, POINT_3D ed );
+int checkInOutPP( POINT_3D st, POINT_3D ed, POINT_3D pt );
 double lengthPP( POINT_3D a, POINT_3D b );
 
 SURFACE_3D addSurface3D( int amount, ... );

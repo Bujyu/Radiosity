@@ -14,15 +14,19 @@
 
 typedef struct model {
 
-    //Main variable
+    // Main variable
     Mesh mesh;
 
-    //Attributes
+    // Attributes
     int type;
     float color[3];
     float position[3];
 
-    //Model information
+    // Radiosity information
+    float reflectivity[3]
+    float emission[3];
+
+    // Model information
     float center[3];
     float radius;
 
@@ -30,8 +34,8 @@ typedef struct model {
     int edges;
     int vertices;
 
-    //Next ptr
-    struct model* next;
+    // Next ptr
+    //struct model* next;
 
 } MODEL;
 

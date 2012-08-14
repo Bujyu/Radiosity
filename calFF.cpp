@@ -6,10 +6,10 @@
 #include <cstdio>
 #include "geometric.h"
 
-#define SIDE 64
+#define SIDE 128
 #define PI 3.1415926535
-enum { top = 0, front, right, back, left };
 
+enum plane{ top = 0, front, right, back, left };
 PATCH patch[5];
 
 POINT_3D interpolation( POINT_3D a, POINT_3D b, POINT_3D c, POINT_3D d, double u, double v ){
@@ -79,7 +79,7 @@ double calHemiCubeFF( POINT_3D pt, int n, double dA ){
 
     double r = lengthPP(addPoint3D(0,0,0), pt);
 
-    return ( n == top ? 1 : pt.y ) * dA / PI * r * r;
+    return ( ( n == top ? 1 : pt.y ) * dA ) / ( PI * r * r );
 
 }
 
@@ -112,8 +112,7 @@ void hemiCubeGenrater(){
             d = addPoint3D(  (double) ( i + 1 ) * dx, 1.0, (double)         j * dz );
 
             face = addSurface3D( 4, a, b, c, d );
-            //face.FF = calHemiCubeFF( surfaceCenter( face ), top, dA );
-            face.FF = calHemiCubeFF( a, top, dA );
+            face.FF = calHemiCubeFF( surfaceCenter( face ), top, dA );
 
             addPatch( &patch[top], face );
 
@@ -159,8 +158,7 @@ void hemiCubeGenrater(){
             d = addPoint3D( 1.0, (double)         i * dy, (double)         j * dz );
 
             face = addSurface3D( 4, a, b, c, d );
-            //face.FF = calHemiCubeFF( surfaceCenter( face ), right, dA );
-            face.FF = calHemiCubeFF( a, right, dA );
+            face.FF = calHemiCubeFF( surfaceCenter( face ), right, dA );
 
             addPatch( &patch[right], face );
 
@@ -171,8 +169,7 @@ void hemiCubeGenrater(){
             d = addPoint3D( -1.0, (double) ( i + 1 ) * dy, (double)         j * dz );
 
             face = addSurface3D( 4, a, b, c, d );
-            //face.FF = calHemiCubeFF( surfaceCenter( face ), left, dA );
-            face.FF = calHemiCubeFF( a, left, dA );
+            face.FF = calHemiCubeFF( surfaceCenter( face ), left, dA );
 
             addPatch( &patch[left], face );
 
@@ -181,15 +178,89 @@ void hemiCubeGenrater(){
 
 }
 
+int sign( double n ){
+    return n == 0 ? 0 : n < 0 ? -1 : 1;
+}
+
+int checkInOut( int plane, POINT_3D st, POINT_3D ed, POINT_3D pt ){
+
+    VEC v1 = vectorPP( st, ed );
+    VEC v2 = vectorPP( st, pt );
+    VEC cross = vCross( v1, v2 );
+
+    //(Bx-Ax)*(Y-Ay) - (By-Ay)*(X-Ax)
+    return sign( cross.vector[plane == top ? 1 : ( plane == front || plane == back ) ? 2 : 0] );
+
+}
+
+double clipPlane( int plane, int n, VEC ray[] ){
+
+    bool flag = true;
+    int i, j, k;
+    double FF = 0.0;
+    POINT_3D ipt[n];
+
+    // Calculate ipt
+
+    // If not hve any ipt
+    if( !flag )
+        return 0.0;
+
+    // Else
+    else{
+
+        // Check cell in or out
+        for( i = 0 ; i < n ; i++ ){
+            for( j = 0 ; j < patch[plane].n_face ; j++ ){
+
+                if( patch[plane].flist[j].visited == -1 )
+                    continue;
+                else{
+
+                    for( k = 0 ; k < patch[plane].flist[j].n_point ; k++ )
+                       if( checkInOut(  i,
+                                        ipt[k%(patch[plane].flist[j].n_point)],
+                                        ipt[(k+1)%(patch[plane].flist[j].n_point)],
+                                        patch[plane].flist[j].plist[k] ) > 0 )
+                            patch[plane].flist[j].visited++;
+
+                    patch[plane].flist[j].visited = patch[plane].flist[j].visited > 3 ? 0 : -1;
+
+                }
+            }
+        }
+
+        // Sum all cell in the clip zone
+        for( i = 0 ; i < patch[plane].n_face ; i++ )
+            if( patch[plane].flist[i].visited > 0 ){
+                FF += patch[plane].flist[i].FF;
+                patch[plane].flist[i].visited = 0;   // Reset visited
+            }
+
+        return FF;
+    }
+
+}
+
+double clipHemiCube( int n, VEC ray[] ){
+
+    return  clipPlane( top, n, ray )   +
+            clipPlane( front, n, ray ) +
+            clipPlane( back, n, ray )  +
+            clipPlane( right, n, ray ) +
+            clipPlane( left, n, ray );
+
+}
+
 void drawHemiCube(){
 
     int i, j, k;
 
-    for( i = 0 ; i < 1 ; i++ ){
+    for( i = 0 ; i < 5 ; i++ ){
         //printf("%d\n", patch[i].n_face );
         for( j = 0 ; j < patch[i].n_face ; j++ ){
-            printf("%d-%d FF : %lf\n", i, j, patch[i].flist[j].FF );
-            glColor3f( patch[i].flist[j].FF * 500, patch[i].flist[j].FF * 500, patch[i].flist[j].FF * 500 );
+            //printf("%d-%d FF : %lf\n", i, j, patch[i].flist[j].FF );
+            glColor3f( patch[i].flist[j].FF * 5000, 0.0, 0.0 );
             glBegin( GL_POLYGON );
             for( k = 0 ; k < patch[i].flist[j].n_point ; k++ ){
                 glVertex3f( patch[i].flist[j].plist[k].x,

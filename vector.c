@@ -93,6 +93,24 @@ double vCos( VEC v1, VEC v2 ){
     return vDot( v1, v2 ) / ( vLength( v1 ) * vLength( v2 ) );
 }
 
+VEC vCross( VEC v1, VEC v2 ){
+
+    int i;
+    VEC cross = vCreate( 3 );
+
+    if( v1.elements != 3 && v2.elements != 3 ){
+        printf( "Dimension is not matching.\n" );
+        exit( 0 );
+    }
+
+    cross.vector[0] = v1.vector[1] * v2.vector[2] - v1.vector[2] * v2.vector[1];
+    cross.vector[1] = v1.vector[2] * v2.vector[0] - v1.vector[0] * v2.vector[2];
+    cross.vector[2] = v1.vector[0] * v2.vector[1] - v1.vector[1] * v2.vector[0];
+
+    return cross;
+
+}
+
 double vLength( VEC v ){
 
     int i;
@@ -143,14 +161,11 @@ inline void vDestroy( VEC v ){
 
 }
 
-
 /*
 int main(){
 
     int i;
     VEC v1, v2;
-
-    srand( time( NULL ) );
 
     v1 = vCreate( 3 );
     v2 = vCreate( 3 );
@@ -160,17 +175,15 @@ int main(){
     v1.vector[1] = 0;
     v1.vector[2] = 0;
 
-    v2.vector[0] = 1;
+    v2.vector[0] = 0;
     v2.vector[1] = 1;
     v2.vector[2] = 0;
 
     vPrint( v1 );
     vPrint( v2 );
 
-    printf("vector dot : %lf\n", vDot( v1, v2 ) );
-    printf("lenght : %lf\n", vLength( v1 ) );
-    printf("Cos : %lf\n", acos( vCos( v1, v2 ) ) * 180.0 / M_PI );
-    vPrint( vNormalize( v1 ) );
+    vPrint( vCross( v1, v2 ) );
+    vPrint( vCross( v2, v1 ) );
 
     return 0;
 

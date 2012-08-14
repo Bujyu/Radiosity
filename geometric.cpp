@@ -38,10 +38,6 @@ POINT_3D surfaceCenter( SURFACE_3D face ){
 
 }
 
-double lengthPP( POINT_3D a, POINT_3D b ){
-    return sqrt( pow( b.x - a.x, 2 ) + pow( b.y - a.y, 2 ) + pow( b.z - a.z, 2 ) );
-}
-
 VEC vectorPP( POINT_3D st, POINT_3D ed ){
 
     VEC v = vCreate( 3 );
@@ -52,6 +48,10 @@ VEC vectorPP( POINT_3D st, POINT_3D ed ){
 
     return v;
 
+}
+
+double lengthPP( POINT_3D a, POINT_3D b ){
+    return sqrt( pow( b.x - a.x, 2 ) + pow( b.y - a.y, 2 ) + pow( b.z - a.z, 2 ) );
 }
 
 // Surface

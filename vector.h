@@ -27,7 +27,8 @@ VEC vAddition( VEC v1, VEC v2 );
 VEC vScalar( VEC v1, double scalar );
 double vDot( VEC v1, VEC v2 );
 double vCos( VEC v1, VEC v2 );
-double  vLength( VEC v );
+VEC vCross( VEC v1, VEC v2 );    //Only in 3-Dimension vector
+double vLength( VEC v );
 inline VEC vNormalize( VEC v );
 //MAT vTranspose  ( VEC v );
 VEC vClone( VEC v );

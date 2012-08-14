@@ -148,11 +148,10 @@ void init(){
 
     hemiCubeGenrater();
 
-    //Depth
     glEnable( GL_DEPTH_TEST );
 
-    readMesh( &mesh, (char*) "Models/five-face.off", center, radius );
-    readMesh( &mesh2, (char*) "Models/mushroom.off", center, radius );
+    //readMesh( &mesh, (char*) "Models/five-face.off", center, radius );
+    //readMesh( &mesh2, (char*) "Models/mushroom.off", center, radius );
 
     //Initial color
     glClearColor( 0.0, 0.0, 0.0, 1.0 );
@@ -172,8 +171,8 @@ void content( void ){
 
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-    drawMesh( mesh );
-    drawMesh( mesh2 );
+    //drawMesh( mesh );
+    //drawMesh( mesh2 );
 
 /*
     int n_cells = 8;

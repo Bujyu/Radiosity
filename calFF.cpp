@@ -6,7 +6,7 @@
 #include <cstdio>
 #include "geometric.h"
 
-#define SIDE 128
+#define SIDE 2
 #define PI 3.1415926535
 
 enum plane{ top = 0, front, right, back, left };
@@ -255,12 +255,14 @@ double clipHemiCube( int n, VEC ray[] ){
 void drawHemiCube(){
 
     int i, j, k;
-
+    double FF;
     for( i = 0 ; i < 5 ; i++ ){
         //printf("%d\n", patch[i].n_face );
+        FF = 0.0;
         for( j = 0 ; j < patch[i].n_face ; j++ ){
             //printf("%d-%d FF : %lf\n", i, j, patch[i].flist[j].FF );
-            glColor3f( patch[i].flist[j].FF * 5000, 0.0, 0.0 );
+            FF += patch[i].flist[j].FF;
+            glColor3f( patch[i].flist[j].FF * 100000, 0.0, 0.0 );
             glBegin( GL_POLYGON );
             for( k = 0 ; k < patch[i].flist[j].n_point ; k++ ){
                 glVertex3f( patch[i].flist[j].plist[k].x,
@@ -269,6 +271,7 @@ void drawHemiCube(){
             }
             glEnd();
         }
+        printf( "%d-%lf\n", i, FF );
     }
 
 }

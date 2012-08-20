@@ -144,7 +144,7 @@ void axis(){
 
 void init(){
 
-    float center[3], radius = 0.0;
+    //float center[3], radius = 0.0;
 
     hemiCubeGenrater();
 
@@ -173,70 +173,6 @@ void content( void ){
 
     //drawMesh( mesh );
     //drawMesh( mesh2 );
-
-/*
-    int n_cells = 8;
-
-    double cellSize = (double) 2 / n_cells;
-    double halfSize = n_cells / 2;
-    int i, j, k;
-
-    //Top
-    for( i = -halfSize ; i < halfSize ; i++ ){
-        for( j = -halfSize ; j < halfSize ; j++ ){
-
-            glPolygonMode( GL_BACK, GL_LINE );
-            glBegin( GL_POLYGON );
-            glVertex3f( (double)i * cellSize, halfSize * cellSize, (double)j * cellSize );
-            glVertex3f( (double)i * cellSize, halfSize * cellSize, (double)( j + 1 ) * cellSize );
-            glVertex3f( (double)( i + 1 ) * cellSize, halfSize * cellSize, (double)( j + 1 ) * cellSize);
-            glVertex3f( (double)( i + 1 ) * cellSize, halfSize * cellSize, (double)j * cellSize );
-            glEnd();
-
-        }
-    }
-
-    //Front and Back
-    for( i = -halfSize ; i < halfSize ; i++ ){
-        for( j = 0; j < halfSize ; j++ ){
-
-            glBegin( GL_POLYGON );
-            glVertex3f( (double)( i + 1 ) * cellSize, (double)j * cellSize        , (double)halfSize * cellSize );
-            glVertex3f( (double)( i + 1 ) * cellSize, (double)( j + 1 ) * cellSize, (double)halfSize * cellSize );
-            glVertex3f( (double)        i * cellSize, (double)( j + 1 ) * cellSize, (double)halfSize * cellSize );
-            glVertex3f( (double)        i * cellSize, (double)j * cellSize        , (double)halfSize * cellSize );
-            glEnd();
-
-            glBegin( GL_POLYGON );
-            glVertex3f( (double)        i * cellSize, (double)j * cellSize        , (double)-halfSize * cellSize );
-            glVertex3f( (double)        i * cellSize, (double)( j + 1 ) * cellSize, (double)-halfSize * cellSize );
-            glVertex3f( (double)( i + 1 ) * cellSize, (double)( j + 1 ) * cellSize, (double)-halfSize * cellSize );
-            glVertex3f( (double)( i + 1 ) * cellSize, (double)j * cellSize        , (double)-halfSize * cellSize );
-            glEnd();
-
-        }
-    }
-
-    // Right and Left
-    for( i = 0; i < halfSize ; i++ ){
-        for( j = -halfSize; j < halfSize ; j++ ){
-
-            glBegin( GL_POLYGON );
-            glVertex3f( (double)halfSize * cellSize, (double)( i + 1 ) * cellSize, (double)j * cellSize         );
-            glVertex3f( (double)halfSize * cellSize, (double)( i + 1 ) * cellSize, (double)( j + 1 ) * cellSize );
-            glVertex3f( (double)halfSize * cellSize, (double)        i * cellSize, (double)( j + 1 ) * cellSize );
-            glVertex3f( (double)halfSize * cellSize, (double)        i * cellSize, (double)j * cellSize         );
-            glEnd();
-
-            glBegin( GL_POLYGON );
-            glVertex3f( (double)-halfSize * cellSize, (double)        i * cellSize, (double)j * cellSize         );
-            glVertex3f( (double)-halfSize * cellSize, (double)        i * cellSize, (double)( j + 1 ) * cellSize );
-            glVertex3f( (double)-halfSize * cellSize, (double)( i + 1 ) * cellSize, (double)( j + 1 ) * cellSize );
-            glVertex3f( (double)-halfSize * cellSize, (double)( i + 1 ) * cellSize, (double)j * cellSize         );
-            glEnd();
-        }
-    }
-*/
 
     drawHemiCube();
 

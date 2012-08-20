@@ -6,8 +6,10 @@
 #include <cstdio>
 #include "geometric.h"
 
-#define SIDE 2
-#define PI 3.1415926535
+#define SIDE 256
+#ifndef PI
+    #define PI 3.1415926535
+#endif
 
 enum plane{ top = 0, front, right, back, left };
 PATCH patch[5];
@@ -195,15 +197,20 @@ int checkInOut( int plane, POINT_3D st, POINT_3D ed, POINT_3D pt ){
 
 double clipPlane( int plane, int n, VEC ray[] ){
 
-    bool flag = true;
+    int count = 0;
+
     int i, j, k;
     double FF = 0.0;
     POINT_3D ipt[n];
 
     // Calculate ipt
+    for( i = 0 ; i < n ; i++ ){
+        count += vIntersection( ray[i], plane, &ipt[i] );
+        ptPrint( ipt[i] );
+    }
 
-    // If not hve any ipt
-    if( !flag )
+    // If not have any ipt
+    if( !count )
         return 0.0;
 
     // Else
@@ -216,27 +223,28 @@ double clipPlane( int plane, int n, VEC ray[] ){
                 if( patch[plane].flist[j].visited == -1 )
                     continue;
                 else{
-
+                    count = 0;
                     for( k = 0 ; k < patch[plane].flist[j].n_point ; k++ )
-                       if( checkInOut(  i,
-                                        ipt[k%(patch[plane].flist[j].n_point)],
-                                        ipt[(k+1)%(patch[plane].flist[j].n_point)],
-                                        patch[plane].flist[j].plist[k] ) > 0 )
-                            patch[plane].flist[j].visited++;
+                        if( checkInOut(  i,
+                                         ipt[k%(patch[plane].flist[j].n_point)],
+                                         ipt[(k+1)%(patch[plane].flist[j].n_point)],
+                                         patch[plane].flist[j].plist[k] ) >= 0 )
+                            count++;
 
-                    patch[plane].flist[j].visited = patch[plane].flist[j].visited > 3 ? 0 : -1;
+                    patch[plane].flist[j].visited = count > 0 ? 1 : -1;
 
                 }
             }
         }
 
         // Sum all cell in the clip zone
-        for( i = 0 ; i < patch[plane].n_face ; i++ )
-            if( patch[plane].flist[i].visited > 0 ){
+        for( i = 0 ; i < patch[plane].n_face ; i++ ){
+            if( patch[plane].flist[i].visited == 1 ){
                 FF += patch[plane].flist[i].FF;
                 patch[plane].flist[i].visited = 0;   // Reset visited
             }
-
+        }
+        printf("%lf\n", FF);
         return FF;
     }
 
@@ -244,11 +252,38 @@ double clipPlane( int plane, int n, VEC ray[] ){
 
 double clipHemiCube( int n, VEC ray[] ){
 
-    return  clipPlane( top, n, ray )   +
-            clipPlane( front, n, ray ) +
-            clipPlane( back, n, ray )  +
-            clipPlane( right, n, ray ) +
-            clipPlane( left, n, ray );
+    double FF = 0.0;
+
+    FF += clipPlane( top, n, ray );
+    FF += clipPlane( front, n, ray );
+    FF += clipPlane( back, n, ray );
+    FF += clipPlane( right, n, ray );
+    FF += clipPlane( left, n, ray );
+
+    return FF;
+
+}
+
+double meshToHC( SURFACE_3D i, SURFACE_3D j ){
+
+    VEC ray[j.n_point];
+    POINT_3D ipt;
+    int u, v, n;
+
+    double FF = 0.0;
+    double area = surfaceArea( i );
+    double dA = area / 1;
+
+    for( u = 0 ; u < 1 ; u++ ){
+        for( v = 0 ; v < 1 ; v++ ){
+            ipt = interpolation( i.plist[0], i.plist[1], i.plist[2], i.plist[3], (double) u / 1000, (double) v / 1000 );
+            for( n = 0 ; n < j.n_point ; n++ )
+                ray[n] = vNormalize( vectorPP( ipt, j.plist[n] ) );
+            FF += clipHemiCube( j.n_point, ray ) * dA;
+        }
+    }
+
+    return FF / area;
 
 }
 
@@ -256,13 +291,12 @@ void drawHemiCube(){
 
     int i, j, k;
     double FF;
+
     for( i = 0 ; i < 5 ; i++ ){
-        //printf("%d\n", patch[i].n_face );
         FF = 0.0;
         for( j = 0 ; j < patch[i].n_face ; j++ ){
-            //printf("%d-%d FF : %lf\n", i, j, patch[i].flist[j].FF );
             FF += patch[i].flist[j].FF;
-            glColor3f( patch[i].flist[j].FF * 100000, 0.0, 0.0 );
+            glColor3f( patch[i].flist[j].FF * 50000, 0.0, 0.0 );
             glBegin( GL_POLYGON );
             for( k = 0 ; k < patch[i].flist[j].n_point ; k++ ){
                 glVertex3f( patch[i].flist[j].plist[k].x,
@@ -273,5 +307,23 @@ void drawHemiCube(){
         }
         printf( "%d-%lf\n", i, FF );
     }
+
+}
+
+int main(){
+
+    SURFACE_3D i, j;
+    double FF = 0.0;
+
+    hemiCubeGenrater();
+
+    i = addSurface3D( 4, addPoint3D( 1, 0, 1 ), addPoint3D( -1, 0, 1 ), addPoint3D( -1, 0, -1 ), addPoint3D( 1, 0, -1 ) );
+    j = addSurface3D( 4, addPoint3D( 1, 2, 1 ), addPoint3D( -1, 2, 1 ), addPoint3D( -1, 2, -1 ), addPoint3D( 1, 2, -1 ) );
+
+    FF = meshToHC( i, j );
+
+    printf("%lf\n", FF );
+
+    return 0;
 
 }

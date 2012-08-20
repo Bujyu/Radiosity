@@ -54,6 +54,10 @@ double lengthPP( POINT_3D a, POINT_3D b ){
     return sqrt( pow( b.x - a.x, 2 ) + pow( b.y - a.y, 2 ) + pow( b.z - a.z, 2 ) );
 }
 
+void ptPrint( POINT_3D p ){
+    printf("[%.4lf %.4lf %.4lf]\n", p.x, p.y, p.z );
+}
+
 // Surface
 SURFACE_3D addSurface3D( int amount, ... ){
 
@@ -66,6 +70,7 @@ SURFACE_3D addSurface3D( int amount, ... ){
     face.plist = ( POINT_3D* ) malloc( sizeof( POINT_3D ) * amount );
     face.n_point = amount;
     face.FF = 0.0;
+    face.visited = 0;
 
     for( i = 0 ; i < amount ; i++ )
         face.plist[i] = va_arg( val, POINT_3D );
@@ -133,6 +138,53 @@ void addPatch( PATCH *patch, SURFACE_3D face ){
     (*patch).n_face++;
 
 }
+
+/// Point of intersection
+double clap( double num, double mboundary, double pboundary ){
+    return ( num > pboundary ) ? pboundary : ( num < mboundary ) ? mboundary : num;
+}
+
+int vIntersection( VEC v, int plane, POINT_3D *ipt ){
+
+    float t;
+
+    // Top
+    if( plane == 0 ){
+        t = v.vector[1] > 0.707 ? 1.0 / v.vector[1] : 0.0;
+        (*ipt).x = v.vector[1] > 0.707 ? v.vector[0] * t : clap( v.vector[0], -1.0, 1.0 );
+        (*ipt).y = 1.0;
+        (*ipt).z = v.vector[1] > 0.707 ? v.vector[2] * t : clap( v.vector[2], -1.0, 1.0 );
+        return 1;
+    }
+    else if( plane == 1 || plane == 3 ){
+        t = fabs( v.vector[2] ) > 0.707 ? 1.0 / v.vector[2] : 0.0;
+
+        if( t < 0.0 )
+            return 0;
+
+        (*ipt).x = fabs( v.vector[2] ) > 0.707 ? v.vector[0] * t : clap( v.vector[0], -1.0, 1.0 );
+        (*ipt).y = fabs( v.vector[2] ) > 0.707 ? v.vector[1] * t : clap( v.vector[1], 0.0, 1.0 );
+        (*ipt).z = plane == 1 ? -1.0 : 1.0;
+
+        return 1;
+    }
+    else if( plane == 2 || plane == 4 ){
+        t = fabs( v.vector[0] ) > 0.707 ? 1.0 / v.vector[0] : 0.0;
+
+        if( t < 0.0 )
+            return 0;
+
+        (*ipt).x = plane == 2 ? -1.0 : 1.0;
+        (*ipt).y = fabs( v.vector[0] ) > 0.707 ? v.vector[1] * t : clap( v.vector[1], 0.0, 1.0 );
+        (*ipt).z = fabs( v.vector[0] ) > 0.707 ? v.vector[2] * t : clap( v.vector[2], -1.0, 1.0 );
+
+        return 1;
+    }
+
+    return 0;
+
+}
+
 
 /*
 int main(){

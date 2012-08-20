@@ -5,6 +5,10 @@
 extern "C" {
 #endif
 
+#ifndef PI
+    #define PI 3.1415926535
+#endif
+
 typedef struct vec{
 
     double *vector;
@@ -29,10 +33,13 @@ double vDot( VEC v1, VEC v2 );
 double vCos( VEC v1, VEC v2 );
 VEC vCross( VEC v1, VEC v2 );    //Only in 3-Dimension vector
 double vLength( VEC v );
-inline VEC vNormalize( VEC v );
+VEC vNormalize( VEC v );
 //MAT vTranspose  ( VEC v );
 VEC vClone( VEC v );
-inline void vDestroy( VEC v );
+void vDestroy( VEC v );
+
+//
+float axisRot( VEC v1, VEC v2, int axis );
 
 #ifdef __cplusplus
 }

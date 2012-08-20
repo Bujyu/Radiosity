@@ -74,6 +74,7 @@ POINT_3D addPoint3D( double x, double y, double z );
 VEC vectorPP( POINT_3D st, POINT_3D ed );
 int checkInOutPP( POINT_3D st, POINT_3D ed, POINT_3D pt );
 double lengthPP( POINT_3D a, POINT_3D b );
+void ptPrint( POINT_3D p );
 
 SURFACE_3D addSurface3D( int amount, ... );
 POINT_3D surfaceCenter( SURFACE_3D face );
@@ -83,6 +84,10 @@ double surfaceArea( SURFACE_3D face );
 
 PATCH createPatch();
 void addPatch( PATCH *patch, SURFACE_3D face );
+
+//
+double clap( double num, double mboundary, double pboundary );
+int vIntersection( VEC v, int plane, POINT_3D *ipt );
 
 #ifdef __cplusplus
 }

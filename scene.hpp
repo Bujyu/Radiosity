@@ -23,7 +23,7 @@ typedef struct model {
     float position[3];
 
     // Radiosity information
-    float reflectivity[3]
+    float reflectivity[3];
     float emission[3];
 
     // Model information

@@ -95,7 +95,6 @@ double vCos( VEC v1, VEC v2 ){
 
 VEC vCross( VEC v1, VEC v2 ){
 
-    int i;
     VEC cross = vCreate( 3 );
 
     if( v1.elements != 3 && v2.elements != 3 ){
@@ -123,7 +122,7 @@ double vLength( VEC v ){
 
 }
 
-inline VEC vNormalize( VEC v ){
+VEC vNormalize( VEC v ){
     return vScalar( v, 1 / vLength( v ) );
 }
 
@@ -155,9 +154,24 @@ VEC vClone( VEC v ){
 
 }
 
-inline void vDestroy( VEC v ){
+void vDestroy( VEC v ){
 
     free( v.vector );
+
+}
+
+/// Trasform
+float axisRot( VEC v1, VEC v2, int axis  ){
+
+    VEC temp = vCreate( 3 );
+
+    temp.vector[0] = v2.vector[0];
+    temp.vector[1] = v2.vector[1];
+    temp.vector[2] = v2.vector[2];
+
+    temp.vector[axis] = 0;
+
+    return acos( vCos( v1, temp ) ) * 180 / PI;
 
 }
 

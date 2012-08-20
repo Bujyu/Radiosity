@@ -1,6 +1,15 @@
 #ifndef MARTIX_H
 #define MATRIX_H
 
+#include <cmath>
+
+#include "geometric.h"
+#include "vector.h"
+
+#ifndef PI
+    #define PI 3.1415926535
+#endif
+
 ///Matrix based structure
 enum matCreateType{ EMPTY = 0, IDENTITY };
 enum matType{ SQUARE = 0, UNSQUARE };
@@ -37,5 +46,11 @@ double mDeterminant( MAT );
 /// Vector to Matrix
 MAT vecToMat( VEC );
 VEC matToVec( MAT, int );
+
+/// Transform Matrix
+VEC transform( VEC origin, MAT transM );
+MAT rotate3D( MAT transM,float rDegree, float x_axis, float y_axis, float z_axis );
+MAT translate3D( MAT transM, float x, float y, float z );
+MAT scale3D( MAT transM, float x, float y, float z );
 
 #endif

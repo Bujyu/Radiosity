@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "vector.h"
 #include "matrix.h"
 
 extern VEC matrix_solution( VEC e, VEC refection, MAT FF );
@@ -184,28 +183,91 @@ VEC matToVec( MAT m, int col ){
 
 }
 
+// Transform Matrix
+VEC transform( VEC origin, MAT transM ){
+
+    VEC rv = vCreate( 3 );
+
+    rv.vector[0] = origin.vector[0] * transM.matrix[0][0] + origin.vector[1] * transM.matrix[0][1] + origin.vector[2] * transM.matrix[0][2] + transM.matrix[0][3];
+    rv.vector[1] = origin.vector[0] * transM.matrix[1][0] + origin.vector[1] * transM.matrix[1][1] + origin.vector[2] * transM.matrix[1][2] + transM.matrix[1][3];
+    rv.vector[2] = origin.vector[0] * transM.matrix[2][0] + origin.vector[1] * transM.matrix[2][1] + origin.vector[2] * transM.matrix[2][2] + transM.matrix[2][3];
+
+    return rv;
+
+}
+
+MAT rotate3D( MAT transM, float rDegree, float x_axis, float y_axis, float z_axis ){
+
+    VEC u = vCreate( 3 );
+    MAT m = mCreate( 4, 4, IDENTITY );
+    float len = sqrt( ( x_axis * x_axis ) + ( y_axis * y_axis ) + ( z_axis * z_axis ) );
+
+    u.vector[0] = x_axis / len;
+    u.vector[1] = y_axis / len;
+    u.vector[2] = z_axis / len;
+
+    m.matrix[0][0] = u.vector[0] * u.vector[0] + cos( rDegree / 180 * PI ) * ( 1 - ( u.vector[0] * u.vector[0] ) ) + sin( rDegree / 180 * PI ) * 0;
+    m.matrix[0][1] = u.vector[0] * u.vector[1] + cos( rDegree / 180 * PI ) * ( 0 - ( u.vector[0] * u.vector[1] ) ) + sin( rDegree / 180 * PI ) * -u.vector[2];
+    m.matrix[0][2] = u.vector[0] * u.vector[2] + cos( rDegree / 180 * PI ) * ( 0 - ( u.vector[0] * u.vector[2] ) ) + sin( rDegree / 180 * PI ) * u.vector[1];
+    m.matrix[1][0] = u.vector[1] * u.vector[0] + cos( rDegree / 180 * PI ) * ( 0 - ( u.vector[1] * u.vector[0] ) ) + sin( rDegree / 180 * PI ) * u.vector[2];
+    m.matrix[1][1] = u.vector[1] * u.vector[1] + cos( rDegree / 180 * PI ) * ( 1 - ( u.vector[1] * u.vector[1] ) ) + sin( rDegree / 180 * PI ) * 0;
+    m.matrix[1][2] = u.vector[1] * u.vector[2] + cos( rDegree / 180 * PI ) * ( 0 - ( u.vector[1] * u.vector[2] ) ) + sin( rDegree / 180 * PI ) * -u.vector[0];
+    m.matrix[2][0] = u.vector[2] * u.vector[0] + cos( rDegree / 180 * PI ) * ( 0 - ( u.vector[2] * u.vector[0] ) ) + sin( rDegree / 180 * PI ) * -u.vector[1];
+    m.matrix[2][1] = u.vector[2] * u.vector[1] + cos( rDegree / 180 * PI ) * ( 0 - ( u.vector[2] * u.vector[1] ) ) + sin( rDegree / 180 * PI ) * u.vector[0];
+    m.matrix[2][2] = u.vector[2] * u.vector[2] + cos( rDegree / 180 * PI ) * ( 1 - ( u.vector[2] * u.vector[2] ) ) + sin( rDegree / 180 * PI ) * 0;
+
+    return mMultiplication( m, transM );
+
+}
+
+MAT translate3D( MAT transM, float x, float y, float z ){
+
+    MAT m = mCreate( 4, 4, IDENTITY );
+
+    m.matrix[0][3] += x;
+    m.matrix[1][3] += y;
+    m.matrix[2][3] += z;
+
+    return mMultiplication( m, transM );
+
+}
+
+MAT scale3D( MAT transM, float x, float y, float z ){
+
+    MAT m = mCreate( 4, 4, IDENTITY );
+
+    m.matrix[0][0] *= x;
+    m.matrix[1][1] *= y;
+    m.matrix[2][2] *= z;
+
+    return mMultiplication( m, transM );
+
+}
+/*
 int main(){
 
-    VEC b;
+    MAT m = mCreate( 4, 4, IDENTITY );
+    VEC v = vCreate( 3 );
+    VEC rv;
 
-    MAT FF = mCreate( 2, 2, EMPTY );
-    VEC e = vCreate( 2 );
-    VEC r = vCreate( 2 );
+    v.vector[0] = 1;
+    v.vector[1] = 1;
+    v.vector[2] = 1;
 
-    FF.matrix[0][0] = 0;
-    FF.matrix[0][1] = 0.5;
-    FF.matrix[1][0] = 0.8;
-    FF.matrix[1][1] = 0;
+    mPrint( m );
 
-    e.vector[0] = 0;
-    e.vector[1] = 1;
+    m = scale3D( m, 1, 2, 5 );
+    m = rotate3D( m, 45, 1, 0, 0 );
+    m = translate3D( m, 1, 0, 0 );
 
-    r.vector[0] = r.vector[1] = 0.9;
+    mPrint( m );
 
-    b = matrix_solution( e, r, FF );
+    rv = transform( v, m );
 
-    vPrint( b );
+    vPrint( v );
+    vPrint( rv );
 
     return 0;
 
 }
+*/

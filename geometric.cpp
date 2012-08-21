@@ -150,13 +150,17 @@ int vIntersection( VEC v, int plane, POINT_3D *ipt ){
 
     // Top
     if( plane == 0 ){
+
         t = v.vector[1] > 0.707 ? 1.0 / v.vector[1] : 0.0;
+
         (*ipt).x = v.vector[1] > 0.707 ? v.vector[0] * t : clap( v.vector[0], -1.0, 1.0 );
         (*ipt).y = 1.0;
         (*ipt).z = v.vector[1] > 0.707 ? v.vector[2] * t : clap( v.vector[2], -1.0, 1.0 );
+
         return 1;
     }
     else if( plane == 1 || plane == 3 ){
+
         t = fabs( v.vector[2] ) > 0.707 ? 1.0 / v.vector[2] : 0.0;
 
         if( t < 0.0 )
@@ -169,6 +173,7 @@ int vIntersection( VEC v, int plane, POINT_3D *ipt ){
         return 1;
     }
     else if( plane == 2 || plane == 4 ){
+
         t = fabs( v.vector[0] ) > 0.707 ? 1.0 / v.vector[0] : 0.0;
 
         if( t < 0.0 )

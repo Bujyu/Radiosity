@@ -6,7 +6,7 @@
 #include <cstdio>
 #include "geometric.h"
 
-#define SIDE 32
+#define SIDE 64
 #ifndef PI
     #define PI 3.1415926535
 #endif
@@ -187,25 +187,38 @@ int sign( double n ){
 
 int checkInOut( int plane, POINT_3D st, POINT_3D ed, POINT_3D pt ){
 /*
+    int s;
+
     VEC v1 = vectorPP( st, ed );
     VEC v2 = vectorPP( st, pt );
     VEC cross = vCross( v1, v2 );
 
-    //(Bx-Ax)*(Y-Ay) - (By-Ay)*(X-Ax)
+    vDestroy( v1 );
+    vDestroy( v2 );
+
+
     switch( plane ){
         case right: case left:
-            return sign( cross.vector[0] );
+            s = sign( cross.vector[0] );
         case front: case back:
-            return sign( cross.vector[2] );
+            s = sign( cross.vector[2] );
         default:
-            return sign( cross.vector[1] );
-    }*/
+            s = sign( cross.vector[1] );
+    }
+
+    vDestroy( v1 );
+    vDestroy( v2 );
+    vDestroy( cross );
+
+    return s;
+*/
+    //(Bx-Ax)*(Y-Ay) - (By-Ay)*(X-Ax)
     if( plane == front || plane == back )
-        return sign( ( ed.x - st.x ) * ( pt.y * st.y ) - ( ed.y - st.y ) * ( pt.x - st.x  ) );
+        return sign( ( ed.x - st.x ) * ( pt.y - st.y ) - ( ed.y - st.y ) * ( pt.x - st.x  ) );
     else if( plane == right || plane == left )
-        return sign( ( ed.z - st.z ) * ( pt.y * st.y ) - ( ed.y - st.y ) * ( pt.z - st.z  ) );
+        return sign( ( ed.y - st.y ) * ( pt.z - st.z ) - ( ed.z - st.z ) * ( pt.y - st.y  ) );
     else
-        return sign( ( ed.x - st.x ) * ( pt.z * st.z ) - ( ed.z - st.z ) * ( pt.x - st.x  ) );
+        return sign( ( ed.x - st.x ) * ( pt.z - st.z ) - ( ed.z - st.z ) * ( pt.x - st.x  ) );
 
 }
 
@@ -234,9 +247,9 @@ double clipPlane( int plane, int n, VEC ray[] ){
                 else{
                     count = 0;
                     for( k = 0 ; k < patch[plane].flist[j].n_point ; k++ ){
-                        if( checkInOut(  i,
-                                         ipt[k%(patch[plane].flist[j].n_point)],
-                                         ipt[(k+1)%(patch[plane].flist[j].n_point)],
+                        if( checkInOut(  plane,
+                                         ipt[i%(patch[plane].flist[j].n_point)],
+                                         ipt[(i+1)%(patch[plane].flist[j].n_point)],
                                          patch[plane].flist[j].plist[k] ) >= 0 ){
                             count++;
                         }
@@ -250,25 +263,29 @@ double clipPlane( int plane, int n, VEC ray[] ){
         for( i = 0 ; i < patch[plane].n_face ; i++ ){
             if( patch[plane].flist[i].visited == 1 ){
                 FF += patch[plane].flist[i].FF;
-                patch[plane].flist[i].visited = 0;   // Reset visited
+                //patch[plane].flist[i].visited = 0;   // Reset visited
             }
         }
 
-        return FF;
-
     }
 
-    return 0.0;
+    free( ipt );
+
+    return FF;
 
 }
 
 double clipHemiCube( int n, VEC ray[] ){
 
-    return clipPlane( top, n, ray );/* +
-           clipPlane( front, n, ray ) +
-           clipPlane( back, n, ray ) +
-           clipPlane( right, n, ray ) +
-           clipPlane( left, n, ray );*/
+    double FF = 0.0;
+
+    FF += clipPlane( top, n, ray );
+    FF += clipPlane( front, n, ray );
+    FF += clipPlane( back, n, ray );
+    FF += clipPlane( right, n, ray );
+    FF += clipPlane( left, n, ray );
+
+    return FF;
 
 }
 
@@ -297,20 +314,55 @@ double meshToHC( SURFACE_3D i, SURFACE_3D j ){
         }
     }
 
+    for( n = 0 ; n < j.n_point ; n++ )
+        vDestroy( ray[n] );
+    free( ray );
+
     return FF / area;
+
+}
+
+double pmeshToHC( SURFACE_3D i ){
+
+    VEC *ray;
+    POINT_3D ipt = addPoint3D( 0, 0, 0 );
+    int n;
+
+    double FF = 0.0;
+
+    ray = (VEC*) malloc( sizeof( VEC ) * i.n_point );
+
+    for( n = 0 ; n < i.n_point ; n++ ){
+        ray[n] = vNormalize( vectorPP( ipt, i.plist[n] ) );
+        glColor3f( 0.0, 0.0, 1.0 );
+        glBegin( GL_LINES );
+            glVertex3f( ipt.x, ipt.y, ipt.z );
+            glVertex3f( ipt.x + ( 2 * ray[n].vector[0] ), ipt.y + ( 2 * ray[n].vector[1] ), ipt.z + ( 2 * ray[n].vector[2] ) );
+        glEnd();
+    }
+    FF = clipHemiCube( i.n_point, ray );
+
+    for( n = 0 ; n < i.n_point ; n++ )
+        vDestroy( ray[n] );
+    free( ray );
+
+    return FF;
 
 }
 
 void drawHemiCube(){
 
     int i, j, k;
-    double FF;
+    //double FF;
+    int count = 0;
 
     for( i = 0 ; i < 5 ; i++ ){
-        FF = 0.0;
+        //FF = 0.0;
         for( j = 0 ; j < patch[i].n_face ; j++ ){
-            FF += patch[i].flist[j].FF;
-            glColor3f( patch[i].flist[j].FF * 50, 0.0, 0.0 );
+            //FF += patch[i].flist[j].FF;
+            if( patch[i].flist[j].visited == 1 ){
+            count++;
+            glColor3f( patch[i].flist[j].FF * 10000, 0.0, 0.0 );
             glBegin( GL_POLYGON );
             for( k = 0 ; k < patch[i].flist[j].n_point ; k++ ){
                 glVertex3f( patch[i].flist[j].plist[k].x,
@@ -318,27 +370,26 @@ void drawHemiCube(){
                             patch[i].flist[j].plist[k].z  );
             }
             glEnd();
+            }
         }
-        printf( "%d-%lf\n", i, FF );
+        //printf( "%d-%lf\n", i, FF );
+        printf( "%d\n", count );
     }
 
 }
 
-int main(){
+void test(){
 
     SURFACE_3D i, j;
     double FF = 0.0;
 
-    hemiCubeGenrater();
-
-    i = addSurface3D( 4, addPoint3D( 10, 0, 10 ), addPoint3D( -10, 0, 10 ), addPoint3D( -10, 0, -10 ), addPoint3D( 10, 0, -10 ) );
-    j = addSurface3D( 4, addPoint3D( 10, 2, 10 ), addPoint3D( -10, 2, 10 ), addPoint3D( -10, 2, -10 ), addPoint3D( 10, 2, -10 ) );
+    i = addSurface3D( 4, addPoint3D( 1, 0, 1 ), addPoint3D( -1, 0, 1 ), addPoint3D( -1, 0, -1 ), addPoint3D( 1, 0, -1 ) );
+    j = addSurface3D( 4, addPoint3D( 1, 0, 1 ), addPoint3D( -1, 0, 1 ), addPoint3D( -1, 0, -1 ), addPoint3D( 1, 0, -1 ) );
 
     FF = meshToHC( i, j );
-
     printf("%lf\n", FF );
 
-    return 0;
+    free( i.plist );
 
 }
 

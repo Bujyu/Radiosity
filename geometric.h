@@ -1,6 +1,8 @@
 #ifndef _GROMETRIC_H
 #define _GROMETRIC_H
 
+#include <windows.h>
+#include <GL/glut.h>
 #include <vector>
 #include "vector.h"
 
@@ -66,12 +68,24 @@ typedef struct{
     //SURFACE_3D *fend;
 
     int n_face;
+    double offset[3];
 
 } PATCH;
 
+typedef struct{
+
+    #ifdef __cplusplus
+    std::vector<PATCH> list;
+    #endif
+
+    int n_patch;
+    int n_face;
+
+} SCENE;
+
 //Function implement
 POINT_3D addPoint3D( double x, double y, double z );
-VEC vectorPP( POINT_3D st, POINT_3D ed );
+VEC vectorPP( const POINT_3D st, const POINT_3D ed );
 int checkInOutPP( POINT_3D st, POINT_3D ed, POINT_3D pt );
 double lengthPP( POINT_3D a, POINT_3D b );
 void ptPrint( POINT_3D p );
@@ -84,10 +98,19 @@ double surfaceArea( SURFACE_3D face );
 
 PATCH createPatch();
 void addPatch( PATCH *patch, SURFACE_3D face );
+void setPatchOffset( PATCH *patch, double x, double y, double z  );
+void drawPatch( const PATCH &patch, int c );
+
+SCENE createScene();
+void addScene( SCENE *scene, PATCH patch );
+int searchScene( const SCENE &scene, int count, int *p, int *f );
 
 //
 double clap( double num, double mboundary, double pboundary );
 int vIntersection( VEC v, int plane, POINT_3D *ipt );
+
+//OpenGL
+inline void glVertex3fg( POINT_3D pt, const double offset[3] ){ glVertex3f( pt.x + offset[0], pt.y + offset[1], pt.z + offset[2] ); }
 
 #ifdef __cplusplus
 }

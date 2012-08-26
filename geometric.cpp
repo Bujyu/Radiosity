@@ -3,7 +3,6 @@
 #include <cstdarg>
 #include <cmath>
 
-#include <vector>
 #include "geometric.h"
 
 // Point
@@ -38,7 +37,7 @@ POINT_3D surfaceCenter( SURFACE_3D face ){
 
 }
 
-VEC vectorPP( POINT_3D st, POINT_3D ed ){
+VEC vectorPP( const POINT_3D st, const POINT_3D ed ){
 
     VEC v = vCreate( 3 );
 
@@ -126,7 +125,9 @@ double surfaceArea( SURFACE_3D face ){
 PATCH createPatch(){
 
     PATCH p;
+
     p.n_face = 0;
+    memset( p.offset, 0, sizeof(double) );
 
     return p;
 
@@ -136,6 +137,69 @@ void addPatch( PATCH *patch, SURFACE_3D face ){
 
     (*patch).flist.push_back( face );
     (*patch).n_face++;
+
+}
+
+void setPatchOffset( PATCH *patch, double x, double y, double z  ){
+
+    (*patch).offset[0] = x;
+    (*patch).offset[1] = y;
+    (*patch).offset[2] = z;
+
+}
+
+void drawPatch( const PATCH &patch, int c ){
+
+    float color[4][3] = { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 }, { 1, 1, 1 } };
+
+    for( int i = 0 ; i < patch.n_face ; i++ ){
+        glColor3fv( color[c] );
+        //glBegin( GL_LINE_LOOP );
+        glBegin( GL_POLYGON );
+            for( int j = 0 ; j < patch.flist[i].n_point ; j++  ){
+                glVertex3fg( patch.flist[i].plist[j], patch.offset );
+            }
+        glEnd();
+    }
+
+}
+
+// SCENE
+SCENE createScene(){
+
+    SCENE s;
+
+    s.n_face = 0;
+    s.n_patch = 0;
+
+    return s;
+
+}
+
+void addScene( SCENE *scene, PATCH patch ){
+
+    (*scene).list.push_back( patch );
+    (*scene).n_patch++;
+    (*scene).n_face += patch.n_face;
+
+}
+
+int searchScene( const SCENE &scene, int count, int *p, int *f ){
+
+    if( count > scene.n_face )
+        return 0;
+
+    for( int i = 0 ; i < scene.n_patch ; i++ ){
+        if( count < scene.list[i].n_face ){
+            *p = i;
+            *f = count;
+            return 1;
+        }
+        else
+            count -= scene.list[i].n_face;
+    }
+
+    return 0;
 
 }
 
@@ -151,37 +215,47 @@ int vIntersection( VEC v, int plane, POINT_3D *ipt ){
     // Top
     if( plane == 0 ){
 
-        t = v.vector[1] > 0.707 ? 1.0 / v.vector[1] : 0.0;
+        if( v.vector[1] < 0.707 )
+            return 0;
 
-        (*ipt).x = v.vector[1] > 0.707 ? v.vector[0] * t : clap( v.vector[0], -1.0, 1.0 );
+        t = 1.0 / v.vector[1];
+
+        (*ipt).x = v.vector[0] * t;
         (*ipt).y = 1.0;
-        (*ipt).z = v.vector[1] > 0.707 ? v.vector[2] * t : clap( v.vector[2], -1.0, 1.0 );
+        (*ipt).z = v.vector[2] * t;
 
         return 1;
+
     }
     else if( plane == 1 || plane == 3 ){
 
-        t = fabs( v.vector[2] ) > 0.707 ? 1.0 / v.vector[2] : 0.0;
+        if( fabs( v.vector[2] ) < 0.707 )
+            return 0;
+
+        t = 1.0 / v.vector[2];
 
         if( t < 0.0 )
             return 0;
 
-        (*ipt).x = fabs( v.vector[2] ) > 0.707 ? v.vector[0] * t : clap( v.vector[0], -1.0, 1.0 );
-        (*ipt).y = fabs( v.vector[2] ) > 0.707 ? v.vector[1] * t : clap( v.vector[1], 0.0, 1.0 );
+        (*ipt).x = v.vector[0] * t;
+        (*ipt).y = v.vector[1] * t;
         (*ipt).z = plane == 1 ? -1.0 : 1.0;
 
         return 1;
     }
     else if( plane == 2 || plane == 4 ){
 
-        t = fabs( v.vector[0] ) > 0.707 ? 1.0 / v.vector[0] : 0.0;
+        if( fabs( v.vector[0] ) < 0.707 )
+            return 0;
+
+        t = 1.0 / v.vector[0];
 
         if( t < 0.0 )
             return 0;
 
         (*ipt).x = plane == 2 ? -1.0 : 1.0;
-        (*ipt).y = fabs( v.vector[0] ) > 0.707 ? v.vector[1] * t : clap( v.vector[1], 0.0, 1.0 );
-        (*ipt).z = fabs( v.vector[0] ) > 0.707 ? v.vector[2] * t : clap( v.vector[2], -1.0, 1.0 );
+        (*ipt).y = v.vector[1] * t;
+        (*ipt).z = v.vector[2] * t;
 
         return 1;
     }
@@ -189,7 +263,6 @@ int vIntersection( VEC v, int plane, POINT_3D *ipt ){
     return 0;
 
 }
-
 
 /*
 int main(){

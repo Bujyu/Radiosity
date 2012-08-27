@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "matrix.h"
+#include "matrix.hpp"
 
 extern VEC matrix_solution( VEC e, VEC refection, MAT FF );
 
@@ -39,6 +39,17 @@ void mPrint( MAT m ){
         printf( " %c\n", i == m.row - 1 ? ']' : ' ' );
     }
     printf("\n");
+
+}
+
+void mDestroy( MAT m ){
+
+    int i;
+
+    for( i = 0 ; i < m.row ; i++ )
+        free( m.matrix[i] );
+
+    free( m.matrix );
 
 }
 

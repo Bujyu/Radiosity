@@ -1,10 +1,6 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef PI
     #define PI 3.1415926535
 #endif
@@ -40,9 +36,5 @@ void vDestroy( VEC v );
 
 //
 float axisRot( VEC v1, VEC v2, int axis );
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

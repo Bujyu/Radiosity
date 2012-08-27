@@ -6,7 +6,7 @@
 #include <cstdio>
 #include "geometric.h"
 
-#define SIDE 64
+#define SIDE 1024
 #ifndef PI
     #define PI 3.1415926535
 #endif
@@ -44,37 +44,62 @@ double calFF( POINT_3D a, VEC nor_a, POINT_3D b, VEC nor_b ){
     VEC aTob = vectorPP( a, b );
     VEC bToa = vectorPP( b, a );
     double r = lengthPP( a, b );
+    double FF;
 
-    return ( vCos( nor_a, aTob ) * vCos( nor_b, bToa ) ) / ( PI * r * r );
+    FF = ( r - 0.0 < 0.000001 ) ?  0.0 : ( vCos( nor_a, aTob ) * vCos( nor_b, bToa ) ) / ( PI * r * r );
+
+    free( aTob.vector );
+    free( bToa.vector );
+
+    return FF;
 
 }
 
-double calCellFF( SURFACE_3D face, VEC normal ){
+#define STEP 0.1
+#define HSTEP 0.05
+double calMeshFF( SURFACE_3D i, VEC inormal, SURFACE_3D j, VEC jnormal ){
 
     //int i, j;
-    double dA, du, dv;
-    double area;
-    double FF = 0.0;
+    double diA, diu, div;
+    double djA, dju, djv;
 
-    POINT_3D ipt;
+    double iarea, jarea;
 
-    // Center Point & Normal Vector
-    POINT_3D center = addPoint3D( 0.0, 0.0, 0.0 );;
-    VEC nc = vCreate( 3 );
-    nc.vector[1] = 1.0;
+    double FFij = 0.0;
+    double FF;
+
+    POINT_3D iipt, jipt;
 
     // Calculate Area
-    area = surfaceArea( face );
-    dA = area * ( 0.1 * 0.1 );
+    iarea = surfaceArea( i );
+    diA = iarea * ( STEP * STEP );
 
-    for( du = 0.0 ; du <= 1.0 ; du += 0.1 ){
-        for( dv = 0.0 ; dv <= 1.0 ; dv += 0.1 ){
-            interpolation( &ipt, face.plist[0], face.plist[1], face.plist[2], face.plist[3], du, dv );
-            FF += dA * calFF( center, nc, ipt, normal );
+    jarea = surfaceArea( j );
+    djA = jarea * ( STEP * STEP );
+
+    for( diu = HSTEP ; diu <= 1.0 ; diu += STEP ){
+        for( div = HSTEP ; div <= 1.0 ; div += STEP ){
+
+            interpolation( &iipt, i.plist[0], i.plist[1], i.plist[2], i.plist[3], diu, div );
+
+            FF = 0.0;
+
+            for( dju = HSTEP ; dju <= 1.0 ; dju += STEP ){
+                for( djv = HSTEP ; djv <= 1.0 ; djv += STEP ){
+
+                    interpolation( &jipt, j.plist[0], j.plist[1], j.plist[2], j.plist[3], dju, djv);
+                    FF += calFF( iipt, inormal, jipt, jnormal ) * djA;
+
+                }
+            }
+
+            FFij += FF * diA;
+
         }
+
     }
 
-    return FF;
+    return FFij / iarea;
 
 }
 
@@ -87,7 +112,7 @@ double calHemiCubeFF( POINT_3D pt, int n, double dA ){
 }
 
 //n_cell is 64 cells or 1024 cells per side
-void hemiCubeGenrater(){
+void hemiCubeGenrator(){
 
     int i, j;
     double dx, dy, dz;
@@ -360,9 +385,9 @@ void drawHemiCube(){
         //FF = 0.0;
         for( j = 0 ; j < patch[i].n_face ; j++ ){
             //FF += patch[i].flist[j].FF;
-            if( patch[i].flist[j].visited == 1 ){
+            if( patch[i].flist[j].visited == 0 ){
             count++;
-            glColor3f( patch[i].flist[j].FF * 10000, 0.0, 0.0 );
+            glColor3f( patch[i].flist[j].FF * 1000, 0.0, 0.0 );
             glBegin( GL_POLYGON );
             for( k = 0 ; k < patch[i].flist[j].n_point ; k++ ){
                 glVertex3f( patch[i].flist[j].plist[k].x,
@@ -373,7 +398,7 @@ void drawHemiCube(){
             }
         }
         //printf( "%d-%lf\n", i, FF );
-        printf( "%d\n", count );
+        //printf( "%d\n", count );
     }
 
 }

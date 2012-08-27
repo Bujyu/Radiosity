@@ -4,7 +4,7 @@
 #include <cmath>
 
 #include "geometric.h"
-#include "vector.h"
+#include "vector.hpp"
 
 #ifndef PI
     #define PI 3.1415926535
@@ -25,6 +25,7 @@ typedef struct mat{
 
 MAT mCreate( int, int, enum matCreateType );
 void mPrint( MAT );
+void mDestroy( MAT m );
 
 /// Basic Function
 /// 1. matrix addition

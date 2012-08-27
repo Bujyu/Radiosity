@@ -6,15 +6,25 @@
 #include <gl/gluit.h>
 #include <gl.hh>
 
+#include "matrix.hpp"
+#include "vector.hpp"
+
 #include "mesh.hpp"
 #include "geometric.h"
 
-extern void hemiCubeGenrater();
+#define CLIP 0
+
+extern void hemiCubeGenrator();
 extern void drawHemiCube();
 extern void test();
 
-Mesh mesh;
-Mesh mesh2;
+extern double meshToHC( SURFACE_3D i, SURFACE_3D j );
+extern double calMeshFF( SURFACE_3D i, VEC inormal, SURFACE_3D j, VEC jnormal );
+
+extern VEC matrix_solution( VEC emission, VEC reflection, MAT FF );
+
+//Mesh mesh;
+//Mesh mesh2;
 int gw, gh;
 
 //Main Func
@@ -25,7 +35,15 @@ int viewer;
 PATCH sphere;
 PATCH square;
 PATCH wall[5];
+PATCH lightSource;
+
 SCENE scene;
+
+// Matrix
+MAT FF;
+VEC e[3];
+VEC p[3];
+VEC b[3];
 
 void sphereCreate( double x, double y, double z ){
 
@@ -36,6 +54,8 @@ void sphereCreate( double x, double y, double z ){
 
     int deg, fi;
     int r = 4;
+
+    VEC va, vb, n;
 
     sphere = createPatch();
 
@@ -59,8 +79,17 @@ void sphereCreate( double x, double y, double z ){
             c = addPoint3D( sp[deg+1][(fi+1)%36].x + x, sp[deg+1][(fi+1)%36].y + y, sp[deg+1][(fi+1)%36].z + z );
             d = addPoint3D(   sp[deg][(fi+1)%36].x + x,   sp[deg][(fi+1)%36].y + y,   sp[deg][(fi+1)%36].z + z );
 
+            va = vectorPP( sp[deg+1][fi], sp[deg+1][(fi+1)%36] );
+            vb = vectorPP( sp[deg+1][fi], sp[deg][fi] );
+            n = vCross( va, vb );
+
             face = ( deg != 0 || deg != 17 ) ? addSurface3D( 4, a, b, c, d ) : addSurface3D( 3, a, b, c );
+            setSurface3DNormal( &face, n.vector[0], n.vector[1], n.vector[2] );
             addPatch( &sphere, face );
+
+            vDestroy( va );
+            vDestroy( vb );
+            vDestroy( n );
 
         }
     }
@@ -83,28 +112,34 @@ void squareCreate( double x, double y, double z ){
     pt[6] = addPoint3D(  2 + x,  4 + y,  2 + z );
     pt[7] = addPoint3D( -2 + x,  4 + y,  2 + z );
 
-    // 0 1 2 3
-    face = addSurface3D( 4, pt[0], pt[1], pt[2], pt[3] );
+    // 3 2 1 0
+    face = addSurface3D( 4, pt[3], pt[2], pt[1], pt[0] );
+    setSurface3DNormal( &face, 0, 0, -1 );
     addPatch( &square, face );
 
-    // 1 5 6 2
-    face = addSurface3D( 4, pt[1], pt[5], pt[6], pt[2] );
+    // 2 6 5 1
+    face = addSurface3D( 4, pt[2], pt[6], pt[5], pt[1] );
+    setSurface3DNormal( &face, -1, 0, 0 );
     addPatch( &square, face );
 
-    // 5 4 7 6
-    face = addSurface3D( 4, pt[5], pt[4], pt[7], pt[6] );
+    // 6 7 4 5
+    face = addSurface3D( 4, pt[6], pt[7], pt[4], pt[5] );
+    setSurface3DNormal( &face, 0, 0, 1 );
     addPatch( &square, face );
 
-    // 4 0 3 7
-    face = addSurface3D( 4, pt[4], pt[0], pt[3], pt[7] );
+    // 7 3 0 4
+    face = addSurface3D( 4, pt[7], pt[3], pt[0], pt[4] );
+    setSurface3DNormal( &face, 1, 0, 0 );
     addPatch( &square, face );
 
-    //Buttom 4 5 1 0
-    face = addSurface3D( 4, pt[4], pt[5], pt[1], pt[0] );
+    //Buttom 0 1 5 4
+    face = addSurface3D( 4, pt[1], pt[0], pt[5], pt[4] );
+    setSurface3DNormal( &face, 0, 1, 0 );
     addPatch( &square, face );
 
-    //Top 3 2 6 7
-    face = addSurface3D( 4, pt[3], pt[2], pt[6], pt[7] );
+    //Top 7 6 2 3
+    face = addSurface3D( 4, pt[7], pt[6], pt[2], pt[3] );
+    setSurface3DNormal( &face, 0, -1, 0 );
     addPatch( &square, face );
 
 }
@@ -114,8 +149,13 @@ void wallCreate(){
     SURFACE_3D face;
     POINT_3D pt[8];
 
-    for( int i = 0 ; i < 5 ; i++ )
-        wall[i] = createPatch();
+    wall[0] = createPatch();
+    wall[1] = createPatch();
+    wall[2] = createPatch();
+    wall[3] = createPatch();
+    wall[4] = createPatch();
+
+    lightSource = createPatch();
 
     pt[0] = addPoint3D( -10, -10, -10 );
     pt[1] = addPoint3D( 10, -10, -10 );
@@ -128,23 +168,33 @@ void wallCreate(){
 
     // 0 1 2 3
     face = addSurface3D( 4, pt[0], pt[1], pt[2], pt[3] );
+    setSurface3DNormal( &face, 0, 0, -1 );
     addPatch( &wall[0], face );
 
     // 1 5 6 2
     face = addSurface3D( 4, pt[1], pt[5], pt[6], pt[2] );
+        setSurface3DNormal( &face, 1, 0, 0 );
     addPatch( &wall[1], face );
 
     // 4 0 3 7
     face = addSurface3D( 4, pt[4], pt[0], pt[3], pt[7] );
+    setSurface3DNormal( &face, -1, 0, 0 );
     addPatch( &wall[2], face );
 
-    //Buttom 4 5 1 0
+    // Buttom 4 5 1 0
     face = addSurface3D( 4, pt[4], pt[5], pt[1], pt[0] );
+    setSurface3DNormal( &face, 0, 1, 0 );
     addPatch( &wall[3], face );
 
-    //Top 3 2 6 7
+    // Top 3 2 6 7
     face = addSurface3D( 4, pt[3], pt[2], pt[6], pt[7] );
+    setSurface3DNormal( &face, 0, -1, 0 );
     addPatch( &wall[4], face );
+
+    // Light Source
+    face = addSurface3D( 4, pt[5], pt[4], pt[7], pt[6] );
+    setSurface3DNormal( &face, 0, 0, 1 );
+    addPatch( &lightSource, face );
 
 }
 
@@ -188,18 +238,19 @@ void reshape( int w, int h ){
 
 }
 */
+
 void keyboard( unsigned char key, int x, int y ){
 
     switch( key ){
         case 's':
         case 'S':
-            meshSplit( &mesh );
-            meshSplit( &mesh2 );
+            //meshSplit( &mesh );
+            //meshSplit( &mesh2 );
             break;
         case 'e':
         case 'E':
-            edgeMeshSplit( &mesh );
-            edgeMeshSplit( &mesh2 );
+            //edgeMeshSplit( &mesh );
+            //edgeMeshSplit( &mesh2 );
             break;
         default:
             break;
@@ -209,6 +260,7 @@ void keyboard( unsigned char key, int x, int y ){
     glutPostRedisplay();
 
 }
+
 /*
 void init( void ){
 
@@ -273,22 +325,99 @@ void axis(){
 
 void init(){
 
+    LARGE_INTEGER t1, t2, ts;
+    QueryPerformanceFrequency(&ts);
+
     //float center[3], radius = 0.0;
 
-    //hemiCubeGenrater();
-    //test();
-    sphereCreate( 4, -6, 0 );
-    squareCreate( -4, -6, 0 );
+    //Model Create
+    //sphereCreate( 4, -6, 0 );
+
+    //squareCreate( -4, -6, 0 );
+    //for( int i = 0 ; i < CLIP ; i++ )clipSurface( &square );
+
     wallCreate();
+    setReflection( &wall[0], 0.84, 0.84, 0.84 );
+    setReflection( &wall[1], 1.0, 0.0, 0.0 );
+    setReflection( &wall[2], 0.0, 0.0, 1.0 );
+    setReflection( &wall[3], 0.54, 0.54, 0.54 );
+    setReflection( &wall[4], 0.84, 0.84, 0.84 );
+
+    setReflection( &lightSource, 0.8, 0.8, 0.8 );
+    setEmission( &lightSource, 1.27, 1.27, 1.27 );
+
+    for( int i = 0 ; i < CLIP ; i++ ){
+        clipSurface( &wall[0] );
+        clipSurface( &wall[1] );
+        clipSurface( &wall[2] );
+        clipSurface( &wall[3] );
+        clipSurface( &wall[4] );
+        clipSurface( &lightSource );
+    }
 
     scene = createScene();
-    addScene( &scene, sphere );
-    addScene( &scene, square );
+    addScene( &scene, lightSource );
+    //addScene( &scene, sphere );
+    //addScene( &scene, square );
     addScene( &scene, wall[0] );
     addScene( &scene, wall[1] );
     addScene( &scene, wall[2] );
     addScene( &scene, wall[3] );
     addScene( &scene, wall[4] );
+
+    // Hemi-Cube Generate
+    printf("Start Hemi-Cube Generate\n");
+    QueryPerformanceCounter(&t1);
+    hemiCubeGenrator();
+    QueryPerformanceCounter(&t2);
+    printf("Complete Hemi-Cube Generate\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
+    //test();
+
+    // FF matrix generate
+    FF = mCreate( scene.n_face, scene.n_face, EMPTY );
+    for( int i = 0 ; i < 3 ; i++ ){
+        e[i] = vCreate( scene.n_face );
+        p[i] = vCreate( scene.n_face );
+    }
+
+    // FF calculate
+    int ip, iface;
+    int jp, jface;
+
+    printf("Start FF calculation\n");
+    QueryPerformanceCounter(&t1);
+    for( int i = 0 ; i < scene.n_face ; i++ ){
+
+        searchScene( scene, i, &ip, &iface );
+
+        e[0].vector[i] = scene.list[ip].emission[0];
+        e[1].vector[i] = scene.list[ip].emission[1];
+        e[2].vector[i] = scene.list[ip].emission[2];
+
+        p[0].vector[i] = scene.list[ip].reflection[0];
+        p[1].vector[i] = scene.list[ip].reflection[1];
+        p[2].vector[i] = scene.list[ip].reflection[2];
+
+        for( int j = 0 ; j < scene.n_face ; j++ ){
+            if( i == j )
+                FF.matrix[i][j] = 0.0;
+            else{
+                searchScene( scene, j, &jp, &jface );
+                //FF.matrix[i][j] = meshToHC( scene.list[ip].flist[iface], scene.list[jp].flist[jface] );
+                FF.matrix[i][j] = calMeshFF( scene.list[ip].flist[iface], scene.list[ip].flist[iface].normal,
+                                             scene.list[jp].flist[jface], scene.list[jp].flist[jface].normal );
+            }
+        }
+    }
+    QueryPerformanceCounter(&t2);
+    printf("Complete FF calculation\t\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
+
+    printf("Start matrix solution\n");
+    QueryPerformanceCounter(&t1);
+    for( int i = 0 ; i < 3 ; i++ )
+        b[i] = matrix_solution( e[i], p[i], FF );
+    QueryPerformanceCounter(&t2);
+    printf("Complete matrix solution\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
 
     glEnable( GL_DEPTH_TEST );
 
@@ -313,24 +442,25 @@ void content( void ){
 
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
+    axis();
+
     //drawMesh( mesh );
     //drawMesh( mesh2 );
 
     //drawHemiCube();
-
-    //sphere();
-
 /*
     for( int i = 0 ; i < scene.n_patch ; i++ )
-        drawPatch( scene.list[i], i < 2 ? 1 : 3 );
+        drawPatch( scene.list[i], i < 1 ? 1 : 3 );
 */
 
     int pc, fc;
 
-    for( int i = 0 ; i < scene.n_face ; i++ ){
+    for( int i = 1 * scene.list[0].n_face ; i < scene.n_face ; i++ ){
 
+        glColor3f( fabs( b[0].vector[i] ), fabs( b[1].vector[i] ), fabs( b[2].vector[i] ) );
         searchScene( scene, i, &pc, &fc );
-        glBegin( GL_LINE_LOOP );
+        glPolygonMode( GL_BACK, GL_LINE );
+        glBegin( GL_POLYGON );
         for( int k = 0 ; k < scene.list[pc].flist[fc].n_point ; k++ ){
             glVertex3f( scene.list[pc].flist[fc].plist[k].x,
                         scene.list[pc].flist[fc].plist[k].y,

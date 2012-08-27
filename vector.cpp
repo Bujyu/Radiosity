@@ -1,20 +1,19 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <time.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cmath>
+#include <ctime>
 
-#include "vector.h"
+#include "vector.hpp"
 
 VEC vCreate( int elements ){
 
     VEC v;
-    int i;
 
     v.elements = elements;
     v.vector = (double*) malloc( sizeof( double ) * elements );
 
-    for( i = 0 ; i < elements ; i++ )
-        v.vector[i] = 0.0;
+    memset( v.vector, 0, sizeof( double ) * elements );
 
     return v;
 
@@ -75,7 +74,7 @@ VEC vScalar( VEC v1, double scalar ){
 double vDot( VEC v1, VEC v2 ){
 
     int i;
-    double dot = 0;
+    double dot = 0.0;
 
     if( v1.elements != v2.elements ){
         printf( "Elements is not matching.\n" );
@@ -116,7 +115,7 @@ double vLength( VEC v ){
     double length = 0;
 
     for( i = 0 ; i < v.elements ; i++ )
-        length += pow( v.vector[i], 2 );
+        length += v.vector[i] * v.vector[i];
 
     return sqrt( length );
 
@@ -161,7 +160,7 @@ void vDestroy( VEC v ){
 }
 
 /// Trasform
-float axisRot( VEC v1, VEC v2, int axis  ){
+float axisRot( VEC v1, VEC v2, int axis ){
 
     VEC temp = vCreate( 3 );
 

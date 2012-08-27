@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <cstdarg>
 #include <cmath>
 
@@ -18,7 +19,7 @@ POINT_3D addPoint3D( double x, double y, double z ){
 
 }
 
-POINT_3D surfaceCenter( SURFACE_3D face ){
+POINT_3D surfaceCenter( const SURFACE_3D &face ){
 
     int n;
     POINT_3D center = addPoint3D( 0, 0, 0 );
@@ -46,6 +47,13 @@ VEC vectorPP( const POINT_3D st, const POINT_3D ed ){
     v.vector[2] = ed.z - st.z;
 
     return v;
+
+}
+
+POINT_3D centerPP( POINT_3D a, POINT_3D b ){
+
+    POINT_3D center = addPoint3D( ( a.x + b.x ) / 2, ( a.y + b.y ) / 2, ( a.z + b.z ) / 2 );
+    return center;
 
 }
 
@@ -77,6 +85,16 @@ SURFACE_3D addSurface3D( int amount, ... ){
     va_end( val );
 
     return face;
+
+}
+
+void setSurface3DNormal( SURFACE_3D *face, double x, double y, double z ){
+
+    (*face).normal = vCreate( 3 );
+
+    (*face).normal.vector[0] = x;
+    (*face).normal.vector[1] = y;
+    (*face).normal.vector[2] = z;
 
 }
 
@@ -127,7 +145,8 @@ PATCH createPatch(){
     PATCH p;
 
     p.n_face = 0;
-    memset( p.offset, 0, sizeof(double) );
+    memset( p.emission, 0, sizeof(double) * 3 );
+    memset( p.reflection, 0, sizeof(double) * 3 );
 
     return p;
 
@@ -140,12 +159,16 @@ void addPatch( PATCH *patch, SURFACE_3D face ){
 
 }
 
-void setPatchOffset( PATCH *patch, double x, double y, double z  ){
+void setEmission( PATCH *patch, double r, double g, double b ){
+    (*patch).emission[0] = r;
+    (*patch).emission[1] = g;
+    (*patch).emission[2] = b;
+}
 
-    (*patch).offset[0] = x;
-    (*patch).offset[1] = y;
-    (*patch).offset[2] = z;
-
+void setReflection( PATCH *patch, double r, double g, double b ){
+    (*patch).reflection[0] = r;
+    (*patch).reflection[1] = g;
+    (*patch).reflection[2] = b;
 }
 
 void drawPatch( const PATCH &patch, int c ){
@@ -155,12 +178,44 @@ void drawPatch( const PATCH &patch, int c ){
     for( int i = 0 ; i < patch.n_face ; i++ ){
         glColor3fv( color[c] );
         //glBegin( GL_LINE_LOOP );
+        glPolygonMode( GL_BACK, GL_LINE );
         glBegin( GL_POLYGON );
             for( int j = 0 ; j < patch.flist[i].n_point ; j++  ){
-                glVertex3fg( patch.flist[i].plist[j], patch.offset );
+                glVertex3fg( patch.flist[i].plist[j] );
             }
         glEnd();
     }
+
+}
+
+void clipSurface( PATCH *patch ){
+
+    std::vector<SURFACE_3D> fclone = (*patch).flist;
+
+    POINT_3D center;
+    SURFACE_3D face;
+
+    (*patch).n_face = 0;
+    (*patch).flist.clear();
+
+    for( int i = 0 ; i < (int) fclone.size() ; i++ ){
+
+        center = surfaceCenter( fclone[i] );
+
+        for( int j = 0 ; j < fclone[i].n_point ; j++ ){
+
+            face = addSurface3D( 4,
+                                 fclone[i].plist[j], centerPP( fclone[i].plist[j], fclone[i].plist[(j+1)%fclone[i].n_point] ),
+                                 center, centerPP( fclone[i].plist[(j+3)%fclone[i].n_point], fclone[i].plist[j] ) );
+            face.normal = fclone[i].normal;
+            //setSurface3DNormal( &face, fclone[i].normal[0], fclone[i].normal[1], fclone[i].normal[2] );
+            addPatch( patch, face );
+
+        }
+
+    }
+
+    fclone.clear();
 
 }
 

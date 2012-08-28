@@ -12,7 +12,7 @@
 #include "mesh.hpp"
 #include "geometric.h"
 
-#define CLIP 0
+#define CLIP 2
 
 extern void hemiCubeGenrator();
 extern void drawHemiCube();
@@ -119,7 +119,7 @@ void squareCreate( double x, double y, double z ){
 
     // 2 6 5 1
     face = addSurface3D( 4, pt[2], pt[6], pt[5], pt[1] );
-    setSurface3DNormal( &face, -1, 0, 0 );
+    setSurface3DNormal( &face, 1, 0, 0 );
     addPatch( &square, face );
 
     // 6 7 4 5
@@ -129,17 +129,17 @@ void squareCreate( double x, double y, double z ){
 
     // 7 3 0 4
     face = addSurface3D( 4, pt[7], pt[3], pt[0], pt[4] );
-    setSurface3DNormal( &face, 1, 0, 0 );
+    setSurface3DNormal( &face, -1, 0, 0 );
     addPatch( &square, face );
 
     //Buttom 0 1 5 4
-    face = addSurface3D( 4, pt[1], pt[0], pt[5], pt[4] );
-    setSurface3DNormal( &face, 0, 1, 0 );
+    face = addSurface3D( 4, pt[0], pt[1], pt[5], pt[4] );
+    setSurface3DNormal( &face, 0, -1, 0 );
     addPatch( &square, face );
 
     //Top 7 6 2 3
     face = addSurface3D( 4, pt[7], pt[6], pt[2], pt[3] );
-    setSurface3DNormal( &face, 0, -1, 0 );
+    setSurface3DNormal( &face, 0, 1, 0 );
     addPatch( &square, face );
 
 }
@@ -168,17 +168,17 @@ void wallCreate(){
 
     // 0 1 2 3
     face = addSurface3D( 4, pt[0], pt[1], pt[2], pt[3] );
-    setSurface3DNormal( &face, 0, 0, -1 );
+    setSurface3DNormal( &face, 0, 0, 1 );
     addPatch( &wall[0], face );
 
     // 1 5 6 2
     face = addSurface3D( 4, pt[1], pt[5], pt[6], pt[2] );
-        setSurface3DNormal( &face, 1, 0, 0 );
+        setSurface3DNormal( &face, -1, 0, 0 );
     addPatch( &wall[1], face );
 
     // 4 0 3 7
     face = addSurface3D( 4, pt[4], pt[0], pt[3], pt[7] );
-    setSurface3DNormal( &face, -1, 0, 0 );
+    setSurface3DNormal( &face, 1, 0, 0 );
     addPatch( &wall[2], face );
 
     // Buttom 4 5 1 0
@@ -193,7 +193,7 @@ void wallCreate(){
 
     // Light Source
     face = addSurface3D( 4, pt[5], pt[4], pt[7], pt[6] );
-    setSurface3DNormal( &face, 0, 0, 1 );
+    setSurface3DNormal( &face, 0, 0, -1 );
     addPatch( &lightSource, face );
 
 }
@@ -332,10 +332,12 @@ void init(){
 
     //Model Create
     //sphereCreate( 4, -6, 0 );
-
-    //squareCreate( -4, -6, 0 );
-    //for( int i = 0 ; i < CLIP ; i++ )clipSurface( &square );
-
+/*
+    squareCreate( -4, -6, 0 );
+    setReflection( &square, 1.0, 1.0, 1.0 );
+    for( int i = 0 ; i < CLIP ; i++ )
+       clipSurface( &square );
+*/
     wallCreate();
     setReflection( &wall[0], 0.84, 0.84, 0.84 );
     setReflection( &wall[1], 1.0, 0.0, 0.0 );
@@ -354,6 +356,7 @@ void init(){
         clipSurface( &wall[4] );
         clipSurface( &lightSource );
     }
+
 
     scene = createScene();
     addScene( &scene, lightSource );
@@ -398,7 +401,7 @@ void init(){
         p[1].vector[i] = scene.list[ip].reflection[1];
         p[2].vector[i] = scene.list[ip].reflection[2];
 
-        for( int j = 0 ; j < scene.n_face ; j++ ){
+        for( int j = i ; j < scene.n_face ; j++ ){
             if( i == j )
                 FF.matrix[i][j] = 0.0;
             else{
@@ -406,6 +409,7 @@ void init(){
                 //FF.matrix[i][j] = meshToHC( scene.list[ip].flist[iface], scene.list[jp].flist[jface] );
                 FF.matrix[i][j] = calMeshFF( scene.list[ip].flist[iface], scene.list[ip].flist[iface].normal,
                                              scene.list[jp].flist[jface], scene.list[jp].flist[jface].normal );
+                FF.matrix[j][i] = FF.matrix[i][j];
             }
         }
     }
@@ -418,6 +422,10 @@ void init(){
         b[i] = matrix_solution( e[i], p[i], FF );
     QueryPerformanceCounter(&t2);
     printf("Complete matrix solution\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
+
+    vPrint( b[0] );
+    vPrint( b[1] );
+    vPrint( b[2] );
 
     glEnable( GL_DEPTH_TEST );
 
@@ -457,7 +465,7 @@ void content( void ){
 
     for( int i = 1 * scene.list[0].n_face ; i < scene.n_face ; i++ ){
 
-        glColor3f( fabs( b[0].vector[i] ), fabs( b[1].vector[i] ), fabs( b[2].vector[i] ) );
+        glColor3f( b[0].vector[i], b[1].vector[i], b[2].vector[i] );
         searchScene( scene, i, &pc, &fc );
         glPolygonMode( GL_BACK, GL_LINE );
         glBegin( GL_POLYGON );

@@ -11,9 +11,7 @@ VEC vCreate( int elements ){
     VEC v;
 
     v.elements = elements;
-    v.vector = (double*) malloc( sizeof( double ) * elements );
-
-    memset( v.vector, 0, sizeof( double ) * elements );
+    v.vector = (double*) calloc( elements, sizeof( double ) );
 
     return v;
 
@@ -82,7 +80,7 @@ double vDot( VEC v1, VEC v2 ){
     }
 
     for( i = 0 ; i < v1.elements ; i++ )
-        dot += v1.vector[i] * v2.vector[i];
+        dot += ( v1.vector[i] * v2.vector[i] );
 
     return dot;
 
@@ -177,15 +175,23 @@ float axisRot( VEC v1, VEC v2, int axis ){
 /*
 int main(){
 
-    int i;
     VEC v1, v2;
+    VEC aTob, bToa;
+
+    POINT_3D a, b;
+
+    a = addPoint3D( 0, 0, 0 );
+    b = addPoint3D( 0, 5, 0 );
+
+    aTob = vectorPP( a, b );
+    bToa = vectorPP( b, a );
 
     v1 = vCreate( 3 );
     v2 = vCreate( 3 );
 
     //Assign value
-    v1.vector[0] = 1;
-    v1.vector[1] = 0;
+    v1.vector[0] = 0;
+    v1.vector[1] = 1;
     v1.vector[2] = 0;
 
     v2.vector[0] = 0;
@@ -194,9 +200,11 @@ int main(){
 
     vPrint( v1 );
     vPrint( v2 );
+    vPrint( aTob );
+    vPrint( bToa );
 
-    vPrint( vCross( v1, v2 ) );
-    vPrint( vCross( v2, v1 ) );
+    printf( "%lf\n", vCos( v1, aTob ) );
+    printf( "%lf\n", vCos( v2, bToa ) );
 
     return 0;
 

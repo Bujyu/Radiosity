@@ -4,6 +4,7 @@
 #include <gl/glut.h>
 #include <vector>
 #include <cstdio>
+#include <cmath>
 #include "geometric.h"
 
 #define SIDE 1024
@@ -45,8 +46,12 @@ double calFF( POINT_3D a, VEC nor_a, POINT_3D b, VEC nor_b ){
     VEC bToa = vectorPP( b, a );
     double r = lengthPP( a, b );
     double FF;
+    double cosA, cosB;
 
-    FF = ( r - 0.0 < 0.000001 ) ?  0.0 : ( vCos( nor_a, aTob ) * vCos( nor_b, bToa ) ) / ( PI * r * r );
+    cosA = vCos( nor_a, aTob );
+    cosB = vCos( nor_b, bToa );
+
+    FF = ( r - 0.0 < 0.000001 ) ?  0.0 : ( clap( cosA, 0.0, 1.0 ) * cosB ) / ( PI * r * r );
 
     free( aTob.vector );
     free( bToa.vector );
@@ -99,7 +104,7 @@ double calMeshFF( SURFACE_3D i, VEC inormal, SURFACE_3D j, VEC jnormal ){
 
     }
 
-    return FFij / iarea;
+    return clap( FFij / iarea, 0.0, 1.0 );
 
 }
 

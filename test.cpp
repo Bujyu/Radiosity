@@ -12,7 +12,7 @@
 #include "mesh.hpp"
 #include "geometric.h"
 
-#define CLIP 2
+#define CLIP 3
 
 extern void hemiCubeGenrator();
 extern void drawHemiCube();
@@ -48,14 +48,12 @@ VEC b[3];
 void sphereCreate( double x, double y, double z ){
 
     SURFACE_3D face;
-    POINT_3D a, b, c, d;
+    POINT_3D a, b, c, d, n;
 
     POINT_3D **sp;
 
     int deg, fi;
     int r = 4;
-
-    VEC va, vb, n;
 
     sphere = createPatch();
 
@@ -79,17 +77,10 @@ void sphereCreate( double x, double y, double z ){
             c = addPoint3D( sp[deg+1][(fi+1)%36].x + x, sp[deg+1][(fi+1)%36].y + y, sp[deg+1][(fi+1)%36].z + z );
             d = addPoint3D(   sp[deg][(fi+1)%36].x + x,   sp[deg][(fi+1)%36].y + y,   sp[deg][(fi+1)%36].z + z );
 
-            va = vectorPP( sp[deg+1][fi], sp[deg+1][(fi+1)%36] );
-            vb = vectorPP( sp[deg+1][fi], sp[deg][fi] );
-            n = vCross( va, vb );
-
             face = ( deg != 0 || deg != 17 ) ? addSurface3D( 4, a, b, c, d ) : addSurface3D( 3, a, b, c );
-            setSurface3DNormal( &face, n.vector[0], n.vector[1], n.vector[2] );
+            n = surfaceCenter( face );
+            setSurface3DNormal( &face, n.x, n.y, n.z );
             addPatch( &sphere, face );
-
-            vDestroy( va );
-            vDestroy( vb );
-            vDestroy( n );
 
         }
     }
@@ -173,7 +164,7 @@ void wallCreate(){
 
     // 1 5 6 2
     face = addSurface3D( 4, pt[1], pt[5], pt[6], pt[2] );
-        setSurface3DNormal( &face, -1, 0, 0 );
+    setSurface3DNormal( &face, -1, 0, 0 );
     addPatch( &wall[1], face );
 
     // 4 0 3 7
@@ -332,11 +323,12 @@ void init(){
 
     //Model Create
     //sphereCreate( 4, -6, 0 );
+    //setReflection( &sphere, 0.54, 0.54, 0.54 );
 /*
     squareCreate( -4, -6, 0 );
-    setReflection( &square, 1.0, 1.0, 1.0 );
+    setReflection( &square, 0.54, 0.54, 0.54 );
     for( int i = 0 ; i < CLIP ; i++ )
-       clipSurface( &square );
+        clipQuadSurface( &square );
 */
     wallCreate();
     setReflection( &wall[0], 0.84, 0.84, 0.84 );
@@ -349,14 +341,14 @@ void init(){
     setEmission( &lightSource, 1.27, 1.27, 1.27 );
 
     for( int i = 0 ; i < CLIP ; i++ ){
-        clipSurface( &wall[0] );
-        clipSurface( &wall[1] );
-        clipSurface( &wall[2] );
-        clipSurface( &wall[3] );
-        clipSurface( &wall[4] );
-        clipSurface( &lightSource );
+        clipQuadSurface( &wall[0] );
+        clipQuadSurface( &wall[1] );
+        clipQuadSurface( &wall[2] );
+        clipQuadSurface( &wall[3] );
+        clipQuadSurface( &wall[4] );
+        clipQuadSurface( &lightSource );
     }
-
+    //
 
     scene = createScene();
     addScene( &scene, lightSource );
@@ -406,9 +398,9 @@ void init(){
                 FF.matrix[i][j] = 0.0;
             else{
                 searchScene( scene, j, &jp, &jface );
-                //FF.matrix[i][j] = meshToHC( scene.list[ip].flist[iface], scene.list[jp].flist[jface] );
-                FF.matrix[i][j] = calMeshFF( scene.list[ip].flist[iface], scene.list[ip].flist[iface].normal,
-                                             scene.list[jp].flist[jface], scene.list[jp].flist[jface].normal );
+                FF.matrix[i][j] = meshToHC( scene.list[ip].flist[iface], scene.list[jp].flist[jface] );
+                /*FF.matrix[i][j] = calMeshFF( scene.list[ip].flist[iface], scene.list[ip].flist[iface].normal,
+                                             scene.list[jp].flist[jface], scene.list[jp].flist[jface].normal );*/
                 FF.matrix[j][i] = FF.matrix[i][j];
             }
         }
@@ -422,10 +414,6 @@ void init(){
         b[i] = matrix_solution( e[i], p[i], FF );
     QueryPerformanceCounter(&t2);
     printf("Complete matrix solution\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
-
-    vPrint( b[0] );
-    vPrint( b[1] );
-    vPrint( b[2] );
 
     glEnable( GL_DEPTH_TEST );
 

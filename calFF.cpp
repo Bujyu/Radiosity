@@ -5,40 +5,18 @@
 #include <vector>
 #include <cstdio>
 #include <cmath>
-#include "geometric.h"
 
-#define SIDE 1024
+#include "geometric.h"
+#include "vector.hpp"
+#include "matrix.hpp"
+
+#define SIDE 32
 #ifndef PI
     #define PI 3.1415926535
 #endif
 
 enum plane{ top = 0, front, right, back, left };
 PATCH patch[5];
-
-void interpolation( POINT_3D *ipt, POINT_3D a, POINT_3D b, POINT_3D c, POINT_3D d, double u, double v ){
-
-/*  Triangle
-    ipt.x = ( 1.0 - u - v ) * p0.x + u * p1.x + v * p2.x;
-    ipt.y = ( 1.0 - u - v ) * p0.y + u * p1.y + v * p2.y;
-    ipt.z = ( 1.0 - u - v ) * p0.z + u * p1.z + v * p2.z;
-*/
-
-    (*ipt).x = ( 1.0 - u ) * ( 1.0 - v ) * a.x +
-            ( 1.0 - u ) * v * b.x +
-            u * v * c.x +
-            u * ( 1.0 - v ) * d.x;
-
-    (*ipt).y = ( 1.0 - u ) * ( 1.0 - v ) * a.y +
-            ( 1.0 - u ) * v * b.y +
-            u * v * c.y +
-            u * ( 1.0 - v ) * d.y;
-
-    (*ipt).z = ( 1.0 - u ) * ( 1.0 - v ) * a.z +
-            ( 1.0 - u ) * v * b.z +
-            u * v * c.z +
-            u * ( 1.0 - v ) * d.z;
-
-}
 
 double calFF( POINT_3D a, VEC nor_a, POINT_3D b, VEC nor_b ){
 
@@ -51,7 +29,7 @@ double calFF( POINT_3D a, VEC nor_a, POINT_3D b, VEC nor_b ){
     cosA = vCos( nor_a, aTob );
     cosB = vCos( nor_b, bToa );
 
-    FF = ( r - 0.0 < 0.000001 ) ?  0.0 : ( clap( cosA, 0.0, 1.0 ) * cosB ) / ( PI * r * r );
+    FF = ( r - 0.0 < 0.000001 ) ?  0.0 : ( clap( cosA, 0.0, 1.0 ) * clap( cosB, 0.0, 1.0 ) ) / ( PI * r * r );
 
     free( aTob.vector );
     free( bToa.vector );
@@ -85,14 +63,14 @@ double calMeshFF( SURFACE_3D i, VEC inormal, SURFACE_3D j, VEC jnormal ){
     for( diu = HSTEP ; diu <= 1.0 ; diu += STEP ){
         for( div = HSTEP ; div <= 1.0 ; div += STEP ){
 
-            interpolation( &iipt, i.plist[0], i.plist[1], i.plist[2], i.plist[3], diu, div );
+            interpolation( &iipt, i, diu, div );
 
             FF = 0.0;
 
             for( dju = HSTEP ; dju <= 1.0 ; dju += STEP ){
                 for( djv = HSTEP ; djv <= 1.0 ; djv += STEP ){
 
-                    interpolation( &jipt, j.plist[0], j.plist[1], j.plist[2], j.plist[3], dju, djv);
+                    interpolation( &jipt, j, dju, djv);
                     FF += calFF( iipt, inormal, jipt, jnormal ) * djA;
 
                 }
@@ -104,15 +82,15 @@ double calMeshFF( SURFACE_3D i, VEC inormal, SURFACE_3D j, VEC jnormal ){
 
     }
 
-    return clap( FFij / iarea, 0.0, 1.0 );
+    return FFij / iarea;
 
 }
 
-double calHemiCubeFF( POINT_3D pt, int n, double dA ){
+double calHemiCubeFF( POINT_3D pt, int n ){
 
-    double r = lengthPP(addPoint3D(0,0,0), pt);
+    double r = pt.x * pt.x + ( n == top ? pt.z * pt.z : pt.y * pt.y ) + 1;
 
-    return ( ( n == top ? 1 : pt.y ) * dA ) / ( PI * r * r );
+    return ( n == top ? 1 : pt.y ) / ( PI * r * r );
 
 }
 
@@ -145,7 +123,7 @@ void hemiCubeGenrator(){
             d = addPoint3D(  (double) ( i + 1 ) * dx, 1.0, (double)         j * dz );
 
             face = addSurface3D( 4, a, b, c, d );
-            face.FF = calHemiCubeFF( surfaceCenter( face ), top, dA );
+            face.FF = calHemiCubeFF( surfaceCenter( face ), top ) * dA;
 
             addPatch( &patch[top], face );
 
@@ -163,7 +141,7 @@ void hemiCubeGenrator(){
             d = addPoint3D( (double)         i * dx, (double)         j * dy, 1.0 );
 
             face = addSurface3D( 4, a, b, c, d );
-            face.FF = calHemiCubeFF( surfaceCenter( face ), back, dA );
+            face.FF = calHemiCubeFF( surfaceCenter( face ), top ) * dA;
 
             addPatch( &patch[back], face );
 
@@ -174,7 +152,7 @@ void hemiCubeGenrator(){
             d = addPoint3D( (double) ( i + 1 ) * dx, (double)         j * dy, -1.0 );
 
             face = addSurface3D( 4, a, b, c, d );
-            face.FF = calHemiCubeFF( surfaceCenter( face ), front, dA );
+            face.FF = calHemiCubeFF( surfaceCenter( face ), top ) * dA;
 
             addPatch( &patch[front], face );
 
@@ -191,7 +169,7 @@ void hemiCubeGenrator(){
             d = addPoint3D( 1.0, (double)         i * dy, (double)         j * dz );
 
             face = addSurface3D( 4, a, b, c, d );
-            face.FF = calHemiCubeFF( surfaceCenter( face ), right, dA );
+            face.FF = calHemiCubeFF( surfaceCenter( face ), top ) * dA;
 
             addPatch( &patch[right], face );
 
@@ -202,7 +180,7 @@ void hemiCubeGenrator(){
             d = addPoint3D( -1.0, (double) ( i + 1 ) * dy, (double)         j * dz );
 
             face = addSurface3D( 4, a, b, c, d );
-            face.FF = calHemiCubeFF( surfaceCenter( face ), left, dA );
+            face.FF = calHemiCubeFF( surfaceCenter( face ), top ) * dA;
 
             addPatch( &patch[left], face );
 
@@ -211,109 +189,80 @@ void hemiCubeGenrator(){
 
 }
 
-int sign( double n ){
-    return n > 0 ? 1 : n < 0 ? -1 : 0;
-}
+void checkInOut( VEC v1, VEC v2 ){
 
-int checkInOut( int plane, POINT_3D st, POINT_3D ed, POINT_3D pt ){
-/*
-    int s;
+    VEC fnormal = vCross( v2, v1 );
+    POINT_3D center;
+    double d;
 
-    VEC v1 = vectorPP( st, ed );
-    VEC v2 = vectorPP( st, pt );
-    VEC cross = vCross( v1, v2 );
+    for( int i = 0 ; i < 5 ; i++ ){
+        for( int j = 0 ; j < patch[i].n_face ; j++ ){
 
-    vDestroy( v1 );
-    vDestroy( v2 );
+            if( patch[i].flist[j].visited ){
+                center = surfaceCenter( patch[i].flist[j] );
+                d = ( center.x * fnormal.vector[0] ) + ( center.y * fnormal.vector[1] ) + ( center.z * fnormal.vector[2] );
+                if( d < 0.0 )
+                    patch[i].flist[j].visited = 0;
+            }
 
-
-    switch( plane ){
-        case right: case left:
-            s = sign( cross.vector[0] );
-        case front: case back:
-            s = sign( cross.vector[2] );
-        default:
-            s = sign( cross.vector[1] );
+        }
     }
 
-    vDestroy( v1 );
-    vDestroy( v2 );
-    vDestroy( cross );
-
-    return s;
-*/
-    //(Bx-Ax)*(Y-Ay) - (By-Ay)*(X-Ax)
-    if( plane == front || plane == back )
-        return sign( ( ed.x - st.x ) * ( pt.y - st.y ) - ( ed.y - st.y ) * ( pt.x - st.x  ) );
-    else if( plane == right || plane == left )
-        return sign( ( ed.y - st.y ) * ( pt.z - st.z ) - ( ed.z - st.z ) * ( pt.y - st.y  ) );
-    else
-        return sign( ( ed.x - st.x ) * ( pt.z - st.z ) - ( ed.z - st.z ) * ( pt.x - st.x  ) );
+    vDestroy( fnormal );
 
 }
 
-double clipPlane( int plane, int n, VEC ray[] ){
+double clipPlane( int n, VEC ray[] ){
 
-    int count = 0;
+    double FF;
 
-    int i, j, k;
-    double FF = 0.0;
-    POINT_3D *ipt;
+    for( int i = 0 ; i < n ; i++ )
+        checkInOut( ray[i], ray[(i+1)%n] );
 
-    ipt = (POINT_3D*) malloc( sizeof( POINT_3D ) * n );
-
-    // Calculate ipt
-    for( i = 0 ; i < n ; i++ )
-        count += vIntersection( ray[i], plane, &ipt[i] );
-
-    if( count ){
-
-        // Check cell in or out
-        for( i = 0 ; i < n ; i++ ){
-            for( j = 0 ; j < patch[plane].n_face ; j++ ){
-
-                if( patch[plane].flist[j].visited == -1 )
-                    continue;
-                else{
-                    count = 0;
-                    for( k = 0 ; k < patch[plane].flist[j].n_point ; k++ ){
-                        if( checkInOut(  plane,
-                                         ipt[i%(patch[plane].flist[j].n_point)],
-                                         ipt[(i+1)%(patch[plane].flist[j].n_point)],
-                                         patch[plane].flist[j].plist[k] ) >= 0 ){
-                            count++;
-                        }
-                    }
-                    patch[plane].flist[j].visited = count > 0 ? 1 : -1;
-                }
-            }
-        }
-
-        // Sum all cell in the clip zone
-        for( i = 0 ; i < patch[plane].n_face ; i++ ){
-            if( patch[plane].flist[i].visited == 1 ){
-                FF += patch[plane].flist[i].FF;
-                //patch[plane].flist[i].visited = 0;   // Reset visited
-            }
-        }
-
-    }
-
-    free( ipt );
+    for( int i = 0 ; i < 5 ; i++ )
+        for( int j = 0 ; j < patch[i].n_face ; j++ )
+            if( patch[i].flist[j].visited == 1 )
+                FF += patch[i].flist[j].FF;
 
     return FF;
 
 }
 
-double clipHemiCube( int n, VEC ray[] ){
+void normalRot( VEC fnormal, int n, VEC ray[] ){
+
+    VEC normal = vCreate( 3 );
+    VEC fn = vClone( fnormal );
+    MAT m = mCreate( 4, 4, IDENTITY );
+
+    normal.vector[1] = 1.0;
+    m = rotate3D( m, axisRot( fn, normal, 0 ), 1, 0, 0 );
+    fn = transform( fn, m );
+    m = rotate3D( m, axisRot( fn, normal, 2 ), 0, 0, 1 );
+
+    for( int i = 0 ; i < n ; i++ )
+        ray[i] = transform( ray[i], m );
+
+    vDestroy( fn );
+    vDestroy( normal );
+    mDestroy( m );
+
+}
+
+void initialHemiCube(){
+
+    for( int i = 0 ; i < 5 ; i++ )
+        for( int j = 0 ; j < patch[i].n_face ; j++ )
+            patch[i].flist[j].visited = 1;
+
+}
+
+double clipHemiCube( VEC fnormal, int n, VEC ray[] ){
 
     double FF = 0.0;
 
-    FF += clipPlane( top, n, ray );
-    FF += clipPlane( front, n, ray );
-    FF += clipPlane( back, n, ray );
-    FF += clipPlane( right, n, ray );
-    FF += clipPlane( left, n, ray );
+    initialHemiCube();
+    normalRot( fnormal, n, ray );
+    FF = clipPlane( n, ray );
 
     return FF;
 
@@ -323,25 +272,33 @@ double meshToHC( SURFACE_3D i, SURFACE_3D j ){
 
     VEC *ray;
     POINT_3D ipt;
-    int u, v, n;
+    double du, dv;
+    double r;
+    int n;
 
     double FF = 0.0;
     double area = surfaceArea( i );
-
-    double dA;
-    int step = 100;
-
-    dA = area / ( step * step );
+    double dA = area * ( STEP * STEP );
 
     ray = (VEC*) malloc( sizeof( VEC ) * j.n_point );
+    for( n = 0 ; n < j.n_point ; n++ )
+        ray[n] = vCreate( 3 );
 
-    for( u = 0 ; u <= step ; u++ ){
-        for( v = 0 ; v <= step ; v++ ){
-            interpolation( &ipt, i.plist[0], i.plist[1], i.plist[2], i.plist[3], (double) u / step, (double) v / step );
-            for( n = 0 ; n < j.n_point ; n++ )
-                ray[n] = vNormalize( vectorPP( ipt, j.plist[n] ) );
-            FF += clipHemiCube( j.n_point, ray ) * dA;
+    for( du = HSTEP ; du <= 1.0 ; du += STEP ){
+        for( dv = HSTEP ; dv <= 1.0 ; dv += STEP ){
+
+            interpolation( &ipt, i, du, dv );
+            for( n = 0 ; n < j.n_point ; n++ ){
+                r = lengthPP( j.plist[n], ipt );
+                ray[n].vector[0] = ( j.plist[n].x - ipt.x ) / r;
+                ray[n].vector[1] = ( j.plist[n].y - ipt.y ) / r;
+                ray[n].vector[2] = ( j.plist[n].z - ipt.z ) / r;
+            }
+            FF += clipHemiCube( i.normal, j.n_point, ray ) * dA;
+
+
         }
+
     }
 
     for( n = 0 ; n < j.n_point ; n++ )
@@ -370,7 +327,7 @@ double pmeshToHC( SURFACE_3D i ){
             glVertex3f( ipt.x + ( 2 * ray[n].vector[0] ), ipt.y + ( 2 * ray[n].vector[1] ), ipt.z + ( 2 * ray[n].vector[2] ) );
         glEnd();
     }
-    FF = clipHemiCube( i.n_point, ray );
+    FF = clipHemiCube( i.normal, i.n_point, ray );
 
     for( n = 0 ; n < i.n_point ; n++ )
         vDestroy( ray[n] );

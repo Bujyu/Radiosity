@@ -7,9 +7,9 @@
 ///return 1 if false
 int converge( VEC b, VEC e, VEC reflection, MAT FF, double boundary ){
 
-    VEC minusE;
     MAT t = mCreate( FF.col, FF.row, EMPTY );
-    MAT r;
+    MAT r, mb;
+    VEC minusE;
     VEC rv, rva;
     int i, j;
     double l;
@@ -18,19 +18,21 @@ int converge( VEC b, VEC e, VEC reflection, MAT FF, double boundary ){
 
     for( i = 0 ; i < FF.row ; i++ )
         for( j = 0 ; j < FF.col ; j++ )
-            t.matrix[i][j] = i == j ? 1 - ( reflection.vector[i] * FF.matrix[i][j] ) :
-                                      -reflection.vector[i] * FF.matrix[i][j];
+            t.matrix[i][j] = ( i == j ) ? 1 -( reflection.vector[i] * FF.matrix[i][j] ) :
+                                            -( reflection.vector[i] * FF.matrix[i][j] );
 
-    r = mMultiplication( t, vecToMat( b ) );
+    mb = vecToMat( b );
+    r = mMultiplication( t, mb );
     rv = matToVec( r, 0 );
     rva = vAddition( rv, minusE );
     l = vLength( rva );
 
     vDestroy( minusE );
-    mDestroy( t );
-    mDestroy( r );
     vDestroy( rv );
     vDestroy( rva );
+    mDestroy( t );
+    mDestroy( r );
+    mDestroy( mb );
 
     if( l > boundary )
         return 1;
@@ -43,10 +45,11 @@ VEC matrix_solution( VEC emission, VEC reflection, MAT FF ){
 
     VEC x = vClone( emission );
     VEC nx = vCreate( emission.elements );
-    int i, j, k;
+    int i, j;
+    //int k;
     double r;
 
-    k = 0;
+    //k = 0;
     do{
 
         for( i = 0 ; i < emission.elements ; i++ ){
@@ -55,11 +58,13 @@ VEC matrix_solution( VEC emission, VEC reflection, MAT FF ){
                 if( i != j )
                     r += FF.matrix[i][j] * x.vector[j];
             }
-            nx.vector[i] = emission.vector[i] + r * reflection.vector[i];
+            nx.vector[i] = emission.vector[i] + ( reflection.vector[i] * r );
         }
-        x = vClone( nx );
 
-        k++;
+        for( i = 0; i < x.elements ; i++ )
+            x.vector[i] = nx.vector[i];
+
+        //k++;
 
     }while( converge( x, emission, reflection, FF, 0.001 ) );
 

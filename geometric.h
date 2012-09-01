@@ -59,9 +59,6 @@ typedef struct{
 
     std::vector<SURFACE_3D> flist;
 
-    //SURFACE_3D *flist;
-    //SURFACE_3D *fend;
-
     int n_face;
     double emission[3];
     double reflection[3];
@@ -70,9 +67,7 @@ typedef struct{
 
 typedef struct{
 
-    #ifdef __cplusplus
     std::vector<PATCH> list;
-    #endif
 
     int n_patch;
     int n_face;
@@ -80,6 +75,7 @@ typedef struct{
 } SCENE;
 
 //Function implement
+// Point
 POINT_3D addPoint3D( double x, double y, double z );
 VEC vectorPP( const POINT_3D st, const POINT_3D ed );
 int checkInOutPP( POINT_3D st, POINT_3D ed, POINT_3D pt );
@@ -87,21 +83,28 @@ POINT_3D centerPP( POINT_3D a, POINT_3D b );
 double lengthPP( POINT_3D a, POINT_3D b );
 void ptPrint( POINT_3D p );
 
+// Surface
 SURFACE_3D addSurface3D( int amount, ... );
 POINT_3D surfaceCenter( const SURFACE_3D &face );
 void setSurface3DNormal( SURFACE_3D *face, double x, double y, double z );
 
-double triangleArea( SURFACE_3D face );
+void interpolationSqr( POINT_3D *ipt, const SURFACE_3D &face, double u, double v );
+void interpolationTri( POINT_3D *ipt, const SURFACE_3D &face, double u, double v );
+void interpolation( POINT_3D *ipt, const SURFACE_3D &face, double u, double v );
+
 double squareArea( SURFACE_3D face );
+double triangleArea( SURFACE_3D face );
 double surfaceArea( SURFACE_3D face );
 
+// Patch
 PATCH createPatch();
 void addPatch( PATCH *patch, SURFACE_3D face );
 void setEmission( PATCH *patch, double r, double g, double b );
 void setReflection( PATCH *patch, double r, double g, double b );
 void drawPatch( const PATCH &patch, int c );
-void clipSurface( PATCH *patch );
+void clipQuadSurface( PATCH *patch );
 
+// Scene
 SCENE createScene();
 void addScene( SCENE *scene, PATCH patch );
 int searchScene( const SCENE &scene, int count, int *p, int *f );
@@ -110,10 +113,8 @@ int searchScene( const SCENE &scene, int count, int *p, int *f );
 double clap( double num, double mboundary, double pboundary );
 int vIntersection( VEC v, int plane, POINT_3D *ipt );
 
-//OpenGL
-inline void glVertex3fg( POINT_3D pt ){
-    glVertex3f( pt.x, pt.y, pt.z );
-}
+// OpenGL
+inline void glVertex3fp( POINT_3D pt ){glVertex3f( pt.x, pt.y, pt.z );}
 
 #endif
 

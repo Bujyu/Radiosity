@@ -203,6 +203,8 @@ VEC transform( VEC origin, MAT transM ){
     rv.vector[1] = origin.vector[0] * transM.matrix[1][0] + origin.vector[1] * transM.matrix[1][1] + origin.vector[2] * transM.matrix[1][2] + transM.matrix[1][3];
     rv.vector[2] = origin.vector[0] * transM.matrix[2][0] + origin.vector[1] * transM.matrix[2][1] + origin.vector[2] * transM.matrix[2][2] + transM.matrix[2][3];
 
+    vDestroy( origin );
+
     return rv;
 
 }
@@ -211,6 +213,7 @@ MAT rotate3D( MAT transM, float rDegree, float x_axis, float y_axis, float z_axi
 
     VEC u = vCreate( 3 );
     MAT m = mCreate( 4, 4, IDENTITY );
+    MAT result;
     float len = sqrt( ( x_axis * x_axis ) + ( y_axis * y_axis ) + ( z_axis * z_axis ) );
 
     u.vector[0] = x_axis / len;
@@ -227,31 +230,49 @@ MAT rotate3D( MAT transM, float rDegree, float x_axis, float y_axis, float z_axi
     m.matrix[2][1] = u.vector[2] * u.vector[1] + cos( rDegree / 180 * PI ) * ( 0 - ( u.vector[2] * u.vector[1] ) ) + sin( rDegree / 180 * PI ) * u.vector[0];
     m.matrix[2][2] = u.vector[2] * u.vector[2] + cos( rDegree / 180 * PI ) * ( 1 - ( u.vector[2] * u.vector[2] ) ) + sin( rDegree / 180 * PI ) * 0;
 
-    return mMultiplication( m, transM );
+    result = mMultiplication( m, transM );
+
+    vDestroy( u );
+    mDestroy( m );
+    mDestroy( transM );
+
+    return result;
 
 }
 
 MAT translate3D( MAT transM, float x, float y, float z ){
 
     MAT m = mCreate( 4, 4, IDENTITY );
+    MAT result;
 
     m.matrix[0][3] += x;
     m.matrix[1][3] += y;
     m.matrix[2][3] += z;
 
-    return mMultiplication( m, transM );
+    result = mMultiplication( m, transM );
+
+    mDestroy( m );
+    mDestroy( transM );
+
+    return result;
 
 }
 
 MAT scale3D( MAT transM, float x, float y, float z ){
 
     MAT m = mCreate( 4, 4, IDENTITY );
+    MAT result;
 
     m.matrix[0][0] *= x;
     m.matrix[1][1] *= y;
     m.matrix[2][2] *= z;
 
-    return mMultiplication( m, transM );
+    result = mMultiplication( m, transM );
+
+    mDestroy( m );
+    mDestroy( transM );
+
+    return result;
 
 }
 /*

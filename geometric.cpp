@@ -19,25 +19,6 @@ POINT_3D addPoint3D( double x, double y, double z ){
 
 }
 
-POINT_3D surfaceCenter( const SURFACE_3D &face ){
-
-    int n;
-    POINT_3D center = addPoint3D( 0, 0, 0 );
-
-    for( n = 0 ; n < face.n_point ; n++ ){
-        center.x += face.plist[n].x;
-        center.y += face.plist[n].y;
-        center.z += face.plist[n].z;
-    }
-
-    center.x /= face.n_point;
-    center.y /= face.n_point;
-    center.z /= face.n_point;
-
-    return center;
-
-}
-
 VEC vectorPP( const POINT_3D st, const POINT_3D ed ){
 
     VEC v = vCreate( 3 );
@@ -95,6 +76,75 @@ void setSurface3DNormal( SURFACE_3D *face, double x, double y, double z ){
     (*face).normal.vector[0] = x;
     (*face).normal.vector[1] = y;
     (*face).normal.vector[2] = z;
+
+}
+
+POINT_3D surfaceCenter( const SURFACE_3D &face ){
+
+    int n;
+    POINT_3D center = addPoint3D( 0, 0, 0 );
+
+    for( n = 0 ; n < face.n_point ; n++ ){
+        center.x += face.plist[n].x;
+        center.y += face.plist[n].y;
+        center.z += face.plist[n].z;
+    }
+
+    center.x /= face.n_point;
+    center.y /= face.n_point;
+    center.z /= face.n_point;
+
+    return center;
+
+}
+
+void interpolationSqr( POINT_3D *ipt, const SURFACE_3D &face, double u, double v ){
+
+    (*ipt).x = ( 1.0 - u ) * ( 1.0 - v ) * face.plist[0].x +
+            ( 1.0 - u ) * v * face.plist[1].x +
+            u * v * face.plist[2].x +
+            u * ( 1.0 - v ) * face.plist[3].x;
+
+    (*ipt).y = ( 1.0 - u ) * ( 1.0 - v ) * face.plist[0].y +
+            ( 1.0 - u ) * v * face.plist[1].y +
+            u * v * face.plist[2].y +
+            u * ( 1.0 - v ) * face.plist[3].y;
+
+    (*ipt).z = ( 1.0 - u ) * ( 1.0 - v ) * face.plist[0].z +
+            ( 1.0 - u ) * v * face.plist[1].z +
+            u * v * face.plist[2].z +
+            u * ( 1.0 - v ) * face.plist[3].z;
+
+}
+
+void interpolationTri( POINT_3D *ipt, const SURFACE_3D &face, double u, double v ){
+
+    int n = 0;
+    double a = lengthPP( face.plist[1], face.plist[1] );
+
+    if( a < lengthPP( face.plist[0], face.plist[1] ) )
+        n = 2;
+    if( a < lengthPP( face.plist[0], face.plist[2] ) )
+        n = 1;
+
+    (*ipt).x = ( 1.0 - u - v ) * face.plist[n].x + u * face.plist[(n+1)%3].x + v * face.plist[(n+2)%3].x;
+    (*ipt).y = ( 1.0 - u - v ) * face.plist[n].y + u * face.plist[(n+1)%3].y + v * face.plist[(n+2)%3].y;
+    (*ipt).z = ( 1.0 - u - v ) * face.plist[n].z + u * face.plist[(n+1)%3].z + v * face.plist[(n+2)%3].z;
+
+}
+
+void interpolation( POINT_3D *ipt, const SURFACE_3D &face, double u, double v ){
+
+    switch( face.n_point ){
+        case 3:
+            interpolationTri( ipt, face, u, v );
+            break;
+        case 4:
+            interpolationSqr( ipt, face, u, v );
+            break;
+        default:
+            break;
+    }
 
 }
 
@@ -171,24 +221,22 @@ void setReflection( PATCH *patch, double r, double g, double b ){
     (*patch).reflection[2] = b;
 }
 
-void drawPatch( const PATCH &patch, int c ){
-
-    float color[4][3] = { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 }, { 1, 1, 1 } };
+void drawPatch( const PATCH &patch, float color[4] ){
 
     for( int i = 0 ; i < patch.n_face ; i++ ){
-        glColor3fv( color[c] );
+        glColor4fv( color );
         //glBegin( GL_LINE_LOOP );
         glPolygonMode( GL_BACK, GL_LINE );
         glBegin( GL_POLYGON );
             for( int j = 0 ; j < patch.flist[i].n_point ; j++  ){
-                glVertex3fg( patch.flist[i].plist[j] );
+                glVertex3fp( patch.flist[i].plist[j] );
             }
         glEnd();
     }
 
 }
 
-void clipSurface( PATCH *patch ){
+void clipQuadSurface( PATCH *patch ){
 
     std::vector<SURFACE_3D> fclone = (*patch).flist;
 

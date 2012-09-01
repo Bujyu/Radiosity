@@ -11,7 +11,9 @@ VEC vCreate( int elements ){
     VEC v;
 
     v.elements = elements;
-    v.vector = (double*) calloc( elements, sizeof( double ) );
+    v.vector = (double*) malloc( sizeof( double ) * elements );
+    for( int i = 0 ; i < elements ; i++ )
+        v.vector[i] = 0.0;
 
     return v;
 
@@ -160,15 +162,18 @@ void vDestroy( VEC v ){
 /// Trasform
 float axisRot( VEC v1, VEC v2, int axis ){
 
-    VEC temp = vCreate( 3 );
-
-    temp.vector[0] = v2.vector[0];
-    temp.vector[1] = v2.vector[1];
-    temp.vector[2] = v2.vector[2];
+    float degree;
+    double sign;
+    VEC temp = vClone( v2 );
 
     temp.vector[axis] = 0;
 
-    return acos( vCos( v1, temp ) ) * 180 / PI;
+    sign = ( v1.vector[(axis+1)%3] * v2.vector[(axis+2)%3] ) - ( v1.vector[(axis+2)%3] * v2.vector[(axis+1)%3] );
+    degree = ( sign > 0 ? 1.0 : -1.0 ) * acos( vCos( v1, temp ) ) * 180 / PI;
+
+    vDestroy( temp );
+
+    return degree;
 
 }
 

@@ -10,7 +10,7 @@
 #include "vector.hpp"
 #include "matrix.hpp"
 
-#define SIDE 32
+#define SIDE 8
 #ifndef PI
     #define PI 3.1415926535
 #endif
@@ -189,26 +189,34 @@ void hemiCubeGenrator(){
 
 }
 
-void checkInOut( VEC v1, VEC v2 ){
+void checkInOut( int n, VEC ray[] ){
 
-    VEC fnormal = vCross( v2, v1 );
+    VEC *fnormal = (VEC*) malloc( sizeof( VEC ) * n );
     POINT_3D center;
     double d;
+
+    for( int i = 0 ; i < n ; i++ )
+        fnormal[i] = vCross( ray[(i+1)%n], ray[i] );
 
     for( int i = 0 ; i < 5 ; i++ ){
         for( int j = 0 ; j < patch[i].n_face ; j++ ){
 
-            if( patch[i].flist[j].visited ){
                 center = surfaceCenter( patch[i].flist[j] );
-                d = ( center.x * fnormal.vector[0] ) + ( center.y * fnormal.vector[1] ) + ( center.z * fnormal.vector[2] );
-                if( d < 0.0 )
-                    patch[i].flist[j].visited = 0;
-            }
+
+                for( int k = 0 ; k < n ; k++ ){
+                    d = ( center.x * fnormal[k].vector[0] ) + ( center.y * fnormal[k].vector[1] ) + ( center.z * fnormal[k].vector[2] );
+                    if( d < 0.0 ){
+                        patch[i].flist[j].visited = 0;
+                        break;
+                    }
+                }
 
         }
     }
 
-    vDestroy( fnormal );
+    for( int i = 0 ; i < n ; i++ )
+        vDestroy( fnormal[i] );
+    free( fnormal );
 
 }
 
@@ -216,8 +224,7 @@ double clipPlane( int n, VEC ray[] ){
 
     double FF;
 
-    for( int i = 0 ; i < n ; i++ )
-        checkInOut( ray[i], ray[(i+1)%n] );
+    checkInOut( n, ray );
 
     for( int i = 0 ; i < 5 ; i++ )
         for( int j = 0 ; j < patch[i].n_face ; j++ )

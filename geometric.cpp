@@ -63,6 +63,8 @@ SURFACE_3D addSurface3D( int amount, ... ){
     for( i = 0 ; i < amount ; i++ )
         face.plist[i] = va_arg( val, POINT_3D );
 
+    face.center = surfaceCenter( face );
+
     va_end( val );
 
     return face;

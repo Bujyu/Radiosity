@@ -123,7 +123,7 @@ void hemiCubeGenrator(){
             d = addPoint3D(  (double) ( i + 1 ) * dx, 1.0, (double)         j * dz );
 
             face = addSurface3D( 4, a, b, c, d );
-            face.FF = calHemiCubeFF( surfaceCenter( face ), top ) * dA;
+            face.FF = calHemiCubeFF( face.center, top ) * dA;
 
             addPatch( &patch[top], face );
 
@@ -141,7 +141,7 @@ void hemiCubeGenrator(){
             d = addPoint3D( (double)         i * dx, (double)         j * dy, 1.0 );
 
             face = addSurface3D( 4, a, b, c, d );
-            face.FF = calHemiCubeFF( surfaceCenter( face ), top ) * dA;
+            face.FF = calHemiCubeFF( face.center, top ) * dA;
 
             addPatch( &patch[back], face );
 
@@ -152,7 +152,7 @@ void hemiCubeGenrator(){
             d = addPoint3D( (double) ( i + 1 ) * dx, (double)         j * dy, -1.0 );
 
             face = addSurface3D( 4, a, b, c, d );
-            face.FF = calHemiCubeFF( surfaceCenter( face ), top ) * dA;
+            face.FF = calHemiCubeFF( face.center, top ) * dA;
 
             addPatch( &patch[front], face );
 
@@ -169,7 +169,7 @@ void hemiCubeGenrator(){
             d = addPoint3D( 1.0, (double)         i * dy, (double)         j * dz );
 
             face = addSurface3D( 4, a, b, c, d );
-            face.FF = calHemiCubeFF( surfaceCenter( face ), top ) * dA;
+            face.FF = calHemiCubeFF( face.center, top ) * dA;
 
             addPatch( &patch[right], face );
 
@@ -180,7 +180,7 @@ void hemiCubeGenrator(){
             d = addPoint3D( -1.0, (double) ( i + 1 ) * dy, (double)         j * dz );
 
             face = addSurface3D( 4, a, b, c, d );
-            face.FF = calHemiCubeFF( surfaceCenter( face ), top ) * dA;
+            face.FF = calHemiCubeFF( face.center, top ) * dA;
 
             addPatch( &patch[left], face );
 
@@ -192,7 +192,6 @@ void hemiCubeGenrator(){
 void checkInOut( int n, VEC ray[] ){
 
     VEC *fnormal = (VEC*) malloc( sizeof( VEC ) * n );
-    POINT_3D center;
     double d;
 
     for( int i = 0 ; i < n ; i++ )
@@ -201,10 +200,8 @@ void checkInOut( int n, VEC ray[] ){
     for( int i = 0 ; i < 5 ; i++ ){
         for( int j = 0 ; j < patch[i].n_face ; j++ ){
 
-                center = surfaceCenter( patch[i].flist[j] );
-
                 for( int k = 0 ; k < n ; k++ ){
-                    d = ( center.x * fnormal[k].vector[0] ) + ( center.y * fnormal[k].vector[1] ) + ( center.z * fnormal[k].vector[2] );
+                    d = ( patch[i].flist[j].center.x * fnormal[k].vector[0] ) + ( patch[i].flist[j].center.y * fnormal[k].vector[1] ) + ( patch[i].flist[j].center.z * fnormal[k].vector[2] );
                     if( d < 0.0 ){
                         patch[i].flist[j].visited = 0;
                         break;
@@ -225,7 +222,6 @@ double clipPlane( int n, VEC ray[] ){
     double FF;
 
     checkInOut( n, ray );
-
     for( int i = 0 ; i < 5 ; i++ )
         for( int j = 0 ; j < patch[i].n_face ; j++ )
             if( patch[i].flist[j].visited == 1 )
@@ -249,9 +245,9 @@ void normalRot( VEC fnormal, int n, VEC ray[] ){
     for( int i = 0 ; i < n ; i++ )
         ray[i] = transform( ray[i], m );
 
+    mDestroy( m );
     vDestroy( fn );
     vDestroy( normal );
-    mDestroy( m );
 
 }
 

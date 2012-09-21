@@ -46,6 +46,7 @@ typedef struct{
 typedef struct{
 
     POINT_3D *plist;
+    POINT_3D center;
     int n_point;
 
     //Addition information

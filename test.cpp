@@ -12,11 +12,13 @@
 #include "mesh.hpp"
 #include "geometric.h"
 
-#define CLIP 3
+#define CLIP 5
 
 extern void hemiCubeGenrator();
 extern void drawHemiCube();
 extern void test();
+
+extern float occlusion( SURFACE_3D i, SURFACE_3D j );
 
 extern double meshToHC( SURFACE_3D i, SURFACE_3D j );
 extern double calMeshFF( SURFACE_3D i, VEC inormal, SURFACE_3D j, VEC jnormal );
@@ -41,6 +43,7 @@ SCENE scene;
 
 // Matrix
 MAT FF;
+MAT visible;
 VEC e[3];
 VEC p[3];
 VEC b[3];
@@ -316,6 +319,9 @@ void axis(){
 
 void init(){
 
+    int ip, iface;
+    int jp, jface;
+
     LARGE_INTEGER t1, t2, ts;
     QueryPerformanceFrequency(&ts);
 
@@ -327,7 +333,7 @@ void init(){
 /*
     squareCreate( -4, -6, 0 );
     setReflection( &square, 0.54, 0.54, 0.54 );
-    for( int i = 0 ; i < CLIP ; i++ )
+    for( int i = 0 ; i < CLIP - 2 ; i++ )
         clipQuadSurface( &square );
 */
     wallCreate();
@@ -368,6 +374,25 @@ void init(){
     printf("Complete Hemi-Cube Generate\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
     //test();
 
+    // Visible matrix generate & check
+    visible = mCreate( scene.n_face, scene.n_face, EMPTY );
+    printf("Start occlusion checking\n");
+    QueryPerformanceCounter(&t1);
+    for( int i = 0 ; i < scene.n_face ; i++ ){
+        searchScene( scene, i, &ip, &iface );
+        for( int j = i ; j < scene.n_face ; j++ ){
+            if( i == j )
+                visible.matrix[i][j] = 0.0;
+            else{
+                searchScene( scene, j, &jp, &jface );
+                visible.matrix[i][j] = occlusion( scene.list[ip].flist[iface], scene.list[jp].flist[jface] );
+                visible.matrix[j][i] = visible.matrix[i][j];
+            }
+        }
+    }
+    QueryPerformanceCounter(&t2);
+    printf("Complete occlusion checking\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
+
     // FF matrix generate
     FF = mCreate( scene.n_face, scene.n_face, EMPTY );
     for( int i = 0 ; i < 3 ; i++ ){
@@ -376,9 +401,6 @@ void init(){
     }
 
     // FF calculate
-    int ip, iface;
-    int jp, jface;
-
     printf("Start FF calculation\n");
     QueryPerformanceCounter(&t1);
     for( int i = 0 ; i < scene.n_face ; i++ ){
@@ -398,7 +420,7 @@ void init(){
                 FF.matrix[i][j] = 0.0;
             else{
                 searchScene( scene, j, &jp, &jface );
-                FF.matrix[i][j] = meshToHC( scene.list[ip].flist[iface], scene.list[jp].flist[jface] );
+                FF.matrix[i][j] = visible.matrix[i][j] * meshToHC( scene.list[ip].flist[iface], scene.list[jp].flist[jface] );
                 /*FF.matrix[i][j] = calMeshFF( scene.list[ip].flist[iface], scene.list[ip].flist[iface].normal,
                                              scene.list[jp].flist[jface], scene.list[jp].flist[jface].normal );*/
                 FF.matrix[j][i] = FF.matrix[i][j];

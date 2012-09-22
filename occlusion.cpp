@@ -3,7 +3,6 @@
 #include "geometric.h"
 #include "vector.hpp"
 
-
 float occlusion( SURFACE_3D i, SURFACE_3D j ){
 
     double visibility = 0.0;
@@ -16,7 +15,7 @@ float occlusion( SURFACE_3D i, SURFACE_3D j ){
     cosA = vCos( i.normal, aTob );
     cosB = vCos( j.normal, bToa );
 
-    if( cosA < 0.0 || cosB < 0.0 )
+    if( cosA < 0.000001 || cosB < 0.000001 )
         return visibility;
 
     // Pass 2

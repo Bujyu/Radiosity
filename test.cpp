@@ -12,7 +12,7 @@
 #include "mesh.hpp"
 #include "geometric.h"
 
-#define CLIP 5
+#define CLIP 2
 
 extern void hemiCubeGenrator();
 extern void drawHemiCube();
@@ -141,7 +141,7 @@ void squareCreate( double x, double y, double z ){
 void wallCreate(){
 
     SURFACE_3D face;
-    POINT_3D pt[8];
+    POINT_3D pt[12];
 
     wall[0] = createPatch();
     wall[1] = createPatch();
@@ -159,6 +159,11 @@ void wallCreate(){
     pt[5] = addPoint3D( 10, -10, 10 );
     pt[6] = addPoint3D( 10, 10, 10 );
     pt[7] = addPoint3D( -10, 10, 10 );
+
+    pt[8] = addPoint3D( 5, -5, 10 );
+    pt[9] = addPoint3D( -5, -5, 10 );
+    pt[10] = addPoint3D( -5, 5, 10 );
+    pt[11] = addPoint3D( 5, 5, 10 );
 
     // 0 1 2 3
     face = addSurface3D( 4, pt[0], pt[1], pt[2], pt[3] );
@@ -186,7 +191,8 @@ void wallCreate(){
     addPatch( &wall[4], face );
 
     // Light Source
-    face = addSurface3D( 4, pt[5], pt[4], pt[7], pt[6] );
+    //face = addSurface3D( 4, pt[5], pt[4], pt[7], pt[6] );
+    face = addSurface3D( 4, pt[8], pt[9], pt[10], pt[11] );
     setSurface3DNormal( &face, 0, 0, -1 );
     addPatch( &lightSource, face );
 
@@ -330,12 +336,12 @@ void init(){
     //Model Create
     //sphereCreate( 4, -6, 0 );
     //setReflection( &sphere, 0.54, 0.54, 0.54 );
-/*
+
     squareCreate( -4, -6, 0 );
     setReflection( &square, 0.54, 0.54, 0.54 );
     for( int i = 0 ; i < CLIP - 2 ; i++ )
         clipQuadSurface( &square );
-*/
+
     wallCreate();
     setReflection( &wall[0], 0.84, 0.84, 0.84 );
     setReflection( &wall[1], 1.0, 0.0, 0.0 );
@@ -354,12 +360,15 @@ void init(){
         clipQuadSurface( &wall[4] );
         clipQuadSurface( &lightSource );
     }
-    //
+
 
     scene = createScene();
+    // Light
     addScene( &scene, lightSource );
+
+    // Model
     //addScene( &scene, sphere );
-    //addScene( &scene, square );
+    addScene( &scene, square );
     addScene( &scene, wall[0] );
     addScene( &scene, wall[1] );
     addScene( &scene, wall[2] );
@@ -393,16 +402,12 @@ void init(){
     QueryPerformanceCounter(&t2);
     printf("Complete occlusion checking\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
 
-    // FF matrix generate
-    FF = mCreate( scene.n_face, scene.n_face, EMPTY );
+    // Emissio and Reflection setting
     for( int i = 0 ; i < 3 ; i++ ){
         e[i] = vCreate( scene.n_face );
         p[i] = vCreate( scene.n_face );
     }
 
-    // FF calculate
-    printf("Start FF calculation\n");
-    QueryPerformanceCounter(&t1);
     for( int i = 0 ; i < scene.n_face ; i++ ){
 
         searchScene( scene, i, &ip, &iface );
@@ -415,14 +420,24 @@ void init(){
         p[1].vector[i] = scene.list[ip].reflection[1];
         p[2].vector[i] = scene.list[ip].reflection[2];
 
+    }
+
+    // FF matrix generate
+    FF = mCreate( scene.n_face, scene.n_face, EMPTY );
+
+    // FF calculate
+    printf("Start FF calculation\n");
+    QueryPerformanceCounter(&t1);
+    for( int i = 0 ; i < scene.n_face ; i++ ){
+        searchScene( scene, i, &ip, &iface );
         for( int j = i ; j < scene.n_face ; j++ ){
             if( i == j )
                 FF.matrix[i][j] = 0.0;
             else{
                 searchScene( scene, j, &jp, &jface );
                 FF.matrix[i][j] = visible.matrix[i][j] * meshToHC( scene.list[ip].flist[iface], scene.list[jp].flist[jface] );
-                /*FF.matrix[i][j] = calMeshFF( scene.list[ip].flist[iface], scene.list[ip].flist[iface].normal,
-                                             scene.list[jp].flist[jface], scene.list[jp].flist[jface].normal );*/
+                //FF.matrix[i][j] = visible.matrix[i][j] * calMeshFF( scene.list[ip].flist[iface], scene.list[ip].flist[iface].normal,
+                //                                                    scene.list[jp].flist[jface], scene.list[jp].flist[jface].normal );
                 FF.matrix[j][i] = FF.matrix[i][j];
             }
         }
@@ -473,7 +488,8 @@ void content( void ){
 
     int pc, fc;
 
-    for( int i = 1 * scene.list[0].n_face ; i < scene.n_face ; i++ ){
+    //for( int i = 1 * scene.list[0].n_face ; i < scene.n_face ; i++ ){
+    for( int i = 0 ; i < scene.n_face ; i++ ){
 
         glColor3f( b[0].vector[i], b[1].vector[i], b[2].vector[i] );
         searchScene( scene, i, &pc, &fc );

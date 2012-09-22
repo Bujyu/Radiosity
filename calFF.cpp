@@ -31,8 +31,8 @@ double calFF( POINT_3D a, VEC nor_a, POINT_3D b, VEC nor_b ){
 
     FF = ( r - 0.0 < 0.000001 ) ?  0.0 : ( clap( cosA, 0.0, 1.0 ) * clap( cosB, 0.0, 1.0 ) ) / ( PI * r * r );
 
-    free( aTob.vector );
-    free( bToa.vector );
+    vDestroy( aTob );
+    vDestroy( bToa );
 
     return FF;
 

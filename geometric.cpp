@@ -163,6 +163,8 @@ double squareArea( SURFACE_3D face ){
     double angleB, angleD;
     double cos_halfBD;
 
+    VEC vBA, vBC, vDC, vDA;
+
     a = lengthPP( face.plist[0], face.plist[1] );
     b = lengthPP( face.plist[1], face.plist[2] );
     c = lengthPP( face.plist[2], face.plist[3] );
@@ -170,9 +172,19 @@ double squareArea( SURFACE_3D face ){
 
     s = ( a + b + c + d ) / 2;
 
-    angleB = acos( vCos( vectorPP( face.plist[1], face.plist[0] ), vectorPP( face.plist[1], face.plist[2] ) ) );
-    angleD = acos( vCos( vectorPP( face.plist[3], face.plist[2] ), vectorPP( face.plist[3], face.plist[0] ) ) );
+    vBA = vectorPP( face.plist[1], face.plist[0] );
+    vBC = vectorPP( face.plist[1], face.plist[2] );
+    vDC = vectorPP( face.plist[3], face.plist[2] );
+    vDA = vectorPP( face.plist[3], face.plist[0] );
+
+    angleB = acos( vCos( vBA, vBC ) );
+    angleD = acos( vCos( vDC, vDA ) );
     cos_halfBD = cos( ( angleB + angleD ) / 2 );
+
+    vDestroy( vBA );
+    vDestroy( vBC );
+    vDestroy( vDC );
+    vDestroy( vDA );
 
     return sqrt( ( ( s - a ) * ( s - b ) * ( s - c ) * ( s - d ) ) - ( a * b * c * d * cos_halfBD * cos_halfBD ) );
 

@@ -209,8 +209,6 @@ PATCH createPatch(){
     PATCH p;
 
     p.n_face = 0;
-    memset( p.emission, 0, sizeof(double) * 3 );
-    memset( p.reflection, 0, sizeof(double) * 3 );
 
     return p;
 
@@ -221,18 +219,6 @@ void addPatch( PATCH *patch, SURFACE_3D face ){
     (*patch).flist.push_back( face );
     (*patch).n_face++;
 
-}
-
-void setEmission( PATCH *patch, double r, double g, double b ){
-    (*patch).emission[0] = r;
-    (*patch).emission[1] = g;
-    (*patch).emission[2] = b;
-}
-
-void setReflection( PATCH *patch, double r, double g, double b ){
-    (*patch).reflection[0] = r;
-    (*patch).reflection[1] = g;
-    (*patch).reflection[2] = b;
 }
 
 void drawPatch( const PATCH &patch, float color[4] ){
@@ -281,6 +267,51 @@ void clipQuadSurface( PATCH *patch ){
 
 }
 
+// Model
+MODEL createModel(){
+
+    MODEL m;
+
+    m.n_face = 0;
+    m.n_patch = 0;
+
+    memset( m.emission, 0, sizeof(double) * 3 );
+    memset( m.reflection, 0, sizeof(double) * 3 );
+
+    return m;
+
+}
+
+void addModel( MODEL *model, PATCH patch ){
+
+    (*model).plist.push_back( patch );
+    (*model).n_patch++;
+    (*model).n_face += patch.n_face;
+
+}
+
+void setEmission( MODEL *model, double r, double g, double b ){
+    (*model).emission[0] = r;
+    (*model).emission[1] = g;
+    (*model).emission[2] = b;
+}
+
+void setReflection( MODEL *model, double r, double g, double b ){
+    (*model).reflection[0] = r;
+    (*model).reflection[1] = g;
+    (*model).reflection[2] = b;
+}
+
+void clipPatch( MODEL *model ){
+
+    (*model).n_face = 0;
+    for( int i = 0 ; i < (*model).n_patch ; i++ ){
+        clipQuadSurface( &((*model).plist[i]) );
+        (*model).n_face += (*model).plist[i].n_face;
+    }
+
+}
+
 // SCENE
 SCENE createScene(){
 
@@ -288,32 +319,37 @@ SCENE createScene(){
 
     s.n_face = 0;
     s.n_patch = 0;
+    s.n_model = 0;
 
     return s;
 
 }
 
-void addScene( SCENE *scene, PATCH patch ){
+void addScene( SCENE *scene, MODEL model ){
 
-    (*scene).list.push_back( patch );
-    (*scene).n_patch++;
-    (*scene).n_face += patch.n_face;
+    (*scene).list.push_back( model );
+    (*scene).n_model++;
+    (*scene).n_face += model.n_face;
+    (*scene).n_patch += model.n_patch;
 
 }
 
-int searchScene( const SCENE &scene, int count, int *p, int *f ){
+int searchScene( const SCENE &scene, int count, int *m, int *p, int *f ){
 
     if( count > scene.n_face )
         return 0;
 
-    for( int i = 0 ; i < scene.n_patch ; i++ ){
-        if( count < scene.list[i].n_face ){
-            *p = i;
-            *f = count;
-            return 1;
+    for( int i = 0 ; i < scene.n_model ; i++ ){
+        for( int j = 0 ; j < scene.list[i].n_patch ; j++ ){
+            if( count < scene.list[i].plist[j].n_face ){
+                *m = i;
+                *p = j;
+                *f = count;
+                return 1;
+            }
+            else
+                count -= scene.list[i].plist[j].n_face;
         }
-        else
-            count -= scene.list[i].n_face;
     }
 
     return 0;

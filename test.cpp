@@ -12,7 +12,7 @@
 #include "mesh.hpp"
 #include "geometric.h"
 
-#define CLIP 2
+#define CLIP 4
 
 extern void hemiCubeGenrator();
 extern void drawHemiCube();
@@ -34,10 +34,10 @@ int mainwin;
 int viewer;
 
 //Model
-PATCH sphere;
-PATCH square;
-PATCH wall[5];
-PATCH lightSource;
+MODEL sphere;
+MODEL square;
+MODEL wall[5];
+MODEL lightSource;
 
 SCENE scene;
 
@@ -50,6 +50,7 @@ VEC b[3];
 
 void sphereCreate( double x, double y, double z ){
 
+    PATCH patch;
     SURFACE_3D face;
     POINT_3D a, b, c, d, n;
 
@@ -58,7 +59,7 @@ void sphereCreate( double x, double y, double z ){
     int deg, fi;
     int r = 4;
 
-    sphere = createPatch();
+    sphere = createModel();
 
     sp = (POINT_3D**) malloc( 19 * sizeof( POINT_3D ) );
     for( deg = 0; deg < 19 ; deg++ )
@@ -80,10 +81,12 @@ void sphereCreate( double x, double y, double z ){
             c = addPoint3D( sp[deg+1][(fi+1)%36].x + x, sp[deg+1][(fi+1)%36].y + y, sp[deg+1][(fi+1)%36].z + z );
             d = addPoint3D(   sp[deg][(fi+1)%36].x + x,   sp[deg][(fi+1)%36].y + y,   sp[deg][(fi+1)%36].z + z );
 
+            patch = createPatch();
             face = ( deg != 0 || deg != 17 ) ? addSurface3D( 4, a, b, c, d ) : addSurface3D( 3, a, b, c );
             n = surfaceCenter( face );
             setSurface3DNormal( &face, n.x, n.y, n.z );
-            addPatch( &sphere, face );
+            addPatch( &patch, face );
+            addModel( &sphere, patch );
 
         }
     }
@@ -92,10 +95,11 @@ void sphereCreate( double x, double y, double z ){
 
 void squareCreate( double x, double y, double z ){
 
+    PATCH patch;
     SURFACE_3D face;
     POINT_3D pt[8];
 
-    square = createPatch();
+    square = createModel();
 
     pt[0] = addPoint3D( -2 + x, -4 + y, -2 + z );
     pt[1] = addPoint3D(  2 + x, -4 + y, -2 + z );
@@ -107,49 +111,62 @@ void squareCreate( double x, double y, double z ){
     pt[7] = addPoint3D( -2 + x,  4 + y,  2 + z );
 
     // 3 2 1 0
+    patch = createPatch();
     face = addSurface3D( 4, pt[3], pt[2], pt[1], pt[0] );
     setSurface3DNormal( &face, 0, 0, -1 );
-    addPatch( &square, face );
+    addPatch( &patch, face );
+    addModel( &square, patch );
 
     // 2 6 5 1
+    patch = createPatch();
     face = addSurface3D( 4, pt[2], pt[6], pt[5], pt[1] );
     setSurface3DNormal( &face, 1, 0, 0 );
-    addPatch( &square, face );
+    addPatch( &patch, face );
+    addModel( &square, patch );
 
     // 6 7 4 5
+    patch = createPatch();
     face = addSurface3D( 4, pt[6], pt[7], pt[4], pt[5] );
     setSurface3DNormal( &face, 0, 0, 1 );
-    addPatch( &square, face );
+    addPatch( &patch, face );
+    addModel( &square, patch );
 
     // 7 3 0 4
+    patch = createPatch();
     face = addSurface3D( 4, pt[7], pt[3], pt[0], pt[4] );
     setSurface3DNormal( &face, -1, 0, 0 );
-    addPatch( &square, face );
+    addPatch( &patch, face );
+    addModel( &square, patch );
 
     //Buttom 0 1 5 4
+    patch = createPatch();
     face = addSurface3D( 4, pt[0], pt[1], pt[5], pt[4] );
     setSurface3DNormal( &face, 0, -1, 0 );
-    addPatch( &square, face );
+    addPatch( &patch, face );
+    addModel( &square, patch );
 
     //Top 7 6 2 3
+    patch = createPatch();
     face = addSurface3D( 4, pt[7], pt[6], pt[2], pt[3] );
     setSurface3DNormal( &face, 0, 1, 0 );
-    addPatch( &square, face );
+    addPatch( &patch, face );
+    addModel( &square, patch );
 
 }
 
 void wallCreate(){
 
+    PATCH patch;
     SURFACE_3D face;
     POINT_3D pt[12];
 
-    wall[0] = createPatch();
-    wall[1] = createPatch();
-    wall[2] = createPatch();
-    wall[3] = createPatch();
-    wall[4] = createPatch();
+    wall[0] = createModel();
+    wall[1] = createModel();
+    wall[2] = createModel();
+    wall[3] = createModel();
+    wall[4] = createModel();
 
-    lightSource = createPatch();
+    lightSource = createModel();
 
     pt[0] = addPoint3D( -10, -10, -10 );
     pt[1] = addPoint3D( 10, -10, -10 );
@@ -166,35 +183,47 @@ void wallCreate(){
     pt[11] = addPoint3D( 5, 5, 10 );
 
     // 0 1 2 3
+    patch = createPatch();
     face = addSurface3D( 4, pt[0], pt[1], pt[2], pt[3] );
     setSurface3DNormal( &face, 0, 0, 1 );
-    addPatch( &wall[0], face );
+    addPatch( &patch, face );
+    addModel( &wall[0], patch );
 
     // 1 5 6 2
+    patch = createPatch();
     face = addSurface3D( 4, pt[1], pt[5], pt[6], pt[2] );
     setSurface3DNormal( &face, -1, 0, 0 );
-    addPatch( &wall[1], face );
+    addPatch( &patch, face );
+    addModel( &wall[1], patch );
 
     // 4 0 3 7
+    patch = createPatch();
     face = addSurface3D( 4, pt[4], pt[0], pt[3], pt[7] );
     setSurface3DNormal( &face, 1, 0, 0 );
-    addPatch( &wall[2], face );
+    addPatch( &patch, face );
+    addModel( &wall[2], patch );
 
     // Buttom 4 5 1 0
+    patch = createPatch();
     face = addSurface3D( 4, pt[4], pt[5], pt[1], pt[0] );
     setSurface3DNormal( &face, 0, 1, 0 );
-    addPatch( &wall[3], face );
+    addPatch( &patch, face );
+    addModel( &wall[3], patch );
 
     // Top 3 2 6 7
+    patch = createPatch();
     face = addSurface3D( 4, pt[3], pt[2], pt[6], pt[7] );
     setSurface3DNormal( &face, 0, -1, 0 );
-    addPatch( &wall[4], face );
+    addPatch( &patch, face );
+    addModel( &wall[4], patch );
 
     // Light Source
-    //face = addSurface3D( 4, pt[5], pt[4], pt[7], pt[6] );
-    face = addSurface3D( 4, pt[8], pt[9], pt[10], pt[11] );
+    patch = createPatch();
+    face = addSurface3D( 4, pt[5], pt[4], pt[7], pt[6] );
+    //face = addSurface3D( 4, pt[8], pt[9], pt[10], pt[11] );
     setSurface3DNormal( &face, 0, 0, -1 );
-    addPatch( &lightSource, face );
+    addPatch( &patch, face );
+    addModel( &lightSource, patch );
 
 }
 
@@ -325,8 +354,8 @@ void axis(){
 
 void init(){
 
-    int ip, iface;
-    int jp, jface;
+    int im, ip, iface;
+    int jm, jp, jface;
 
     LARGE_INTEGER t1, t2, ts;
     QueryPerformanceFrequency(&ts);
@@ -340,7 +369,7 @@ void init(){
     squareCreate( -4, -6, 0 );
     setReflection( &square, 0.54, 0.54, 0.54 );
     for( int i = 0 ; i < CLIP - 2 ; i++ )
-        clipQuadSurface( &square );
+        clipPatch( &square );
 
     wallCreate();
     setReflection( &wall[0], 0.84, 0.84, 0.84 );
@@ -353,14 +382,13 @@ void init(){
     setEmission( &lightSource, 1.27, 1.27, 1.27 );
 
     for( int i = 0 ; i < CLIP ; i++ ){
-        clipQuadSurface( &wall[0] );
-        clipQuadSurface( &wall[1] );
-        clipQuadSurface( &wall[2] );
-        clipQuadSurface( &wall[3] );
-        clipQuadSurface( &wall[4] );
-        clipQuadSurface( &lightSource );
+        clipPatch( &wall[0] );
+        clipPatch( &wall[1] );
+        clipPatch( &wall[2] );
+        clipPatch( &wall[3] );
+        clipPatch( &wall[4] );
+        clipPatch( &lightSource );
     }
-
 
     scene = createScene();
     // Light
@@ -375,6 +403,9 @@ void init(){
     addScene( &scene, wall[3] );
     addScene( &scene, wall[4] );
 
+    printf( "P:%d S:%d\n", square.n_patch, square.n_face );
+    printf( "M:%d P:%d S:%d\n", scene.n_model, scene.n_patch, scene.n_face );
+
     // Hemi-Cube Generate
     printf("Start Hemi-Cube Generate\n");
     QueryPerformanceCounter(&t1);
@@ -385,16 +416,17 @@ void init(){
 
     // Visible matrix generate & check
     visible = mCreate( scene.n_face, scene.n_face, EMPTY );
+
     printf("Start occlusion checking\n");
     QueryPerformanceCounter(&t1);
     for( int i = 0 ; i < scene.n_face ; i++ ){
-        searchScene( scene, i, &ip, &iface );
+        searchScene( scene, i, &im, &ip, &iface );
         for( int j = i ; j < scene.n_face ; j++ ){
             if( i == j )
                 visible.matrix[i][j] = 0.0;
             else{
-                searchScene( scene, j, &jp, &jface );
-                visible.matrix[i][j] = occlusion( scene.list[ip].flist[iface], scene.list[jp].flist[jface] );
+                searchScene( scene, j, &jm, &jp, &jface );
+                visible.matrix[i][j] = occlusion( scene.list[im].plist[ip].flist[iface], scene.list[jm].plist[jp].flist[jface] );
                 visible.matrix[j][i] = visible.matrix[i][j];
             }
         }
@@ -410,15 +442,15 @@ void init(){
 
     for( int i = 0 ; i < scene.n_face ; i++ ){
 
-        searchScene( scene, i, &ip, &iface );
+        searchScene( scene, i, &im, &ip, &iface );
 
-        e[0].vector[i] = scene.list[ip].emission[0];
-        e[1].vector[i] = scene.list[ip].emission[1];
-        e[2].vector[i] = scene.list[ip].emission[2];
+        e[0].vector[i] = scene.list[im].emission[0];
+        e[1].vector[i] = scene.list[im].emission[1];
+        e[2].vector[i] = scene.list[im].emission[2];
 
-        p[0].vector[i] = scene.list[ip].reflection[0];
-        p[1].vector[i] = scene.list[ip].reflection[1];
-        p[2].vector[i] = scene.list[ip].reflection[2];
+        p[0].vector[i] = scene.list[im].reflection[0];
+        p[1].vector[i] = scene.list[im].reflection[1];
+        p[2].vector[i] = scene.list[im].reflection[2];
 
     }
 
@@ -429,15 +461,15 @@ void init(){
     printf("Start FF calculation\n");
     QueryPerformanceCounter(&t1);
     for( int i = 0 ; i < scene.n_face ; i++ ){
-        searchScene( scene, i, &ip, &iface );
+        searchScene( scene, i, &im, &ip, &iface );
         for( int j = i ; j < scene.n_face ; j++ ){
             if( i == j )
                 FF.matrix[i][j] = 0.0;
             else{
-                searchScene( scene, j, &jp, &jface );
-                FF.matrix[i][j] = visible.matrix[i][j] * meshToHC( scene.list[ip].flist[iface], scene.list[jp].flist[jface] );
-                //FF.matrix[i][j] = visible.matrix[i][j] * calMeshFF( scene.list[ip].flist[iface], scene.list[ip].flist[iface].normal,
-                //                                                    scene.list[jp].flist[jface], scene.list[jp].flist[jface].normal );
+                searchScene( scene, j, &jm, &jp, &jface );
+                FF.matrix[i][j] = visible.matrix[i][j] * meshToHC( scene.list[im].plist[ip].flist[iface], scene.list[jm].plist[jp].flist[jface] );
+                //FF.matrix[i][j] = visible.matrix[i][j] * calMeshFF( scene.list[im].plist[ip].flist[iface], scene.list[im].plist[ip].flist[iface].normal,
+                //                                                    scene.list[jm].plist[jp].flist[jface], scene.list[jm].plist[jp].flist[jface].normal );
                 FF.matrix[j][i] = FF.matrix[i][j];
             }
         }
@@ -486,19 +518,19 @@ void content( void ){
         drawPatch( scene.list[i], i < 1 ? 1 : 3 );
 */
 
-    int pc, fc;
+    int mc, pc, fc;
 
     //for( int i = 1 * scene.list[0].n_face ; i < scene.n_face ; i++ ){
     for( int i = 0 ; i < scene.n_face ; i++ ){
 
         glColor3f( b[0].vector[i], b[1].vector[i], b[2].vector[i] );
-        searchScene( scene, i, &pc, &fc );
+        searchScene( scene, i, &mc, &pc, &fc );
         glPolygonMode( GL_BACK, GL_LINE );
         glBegin( GL_POLYGON );
-        for( int k = 0 ; k < scene.list[pc].flist[fc].n_point ; k++ ){
-            glVertex3f( scene.list[pc].flist[fc].plist[k].x,
-                        scene.list[pc].flist[fc].plist[k].y,
-                        scene.list[pc].flist[fc].plist[k].z  );
+        for( int k = 0 ; k < scene.list[mc].plist[pc].flist[fc].n_point ; k++ ){
+            glVertex3f( scene.list[mc].plist[pc].flist[fc].plist[k].x,
+                        scene.list[mc].plist[pc].flist[fc].plist[k].y,
+                        scene.list[mc].plist[pc].flist[fc].plist[k].z  );
         }
         glEnd();
 

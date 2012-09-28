@@ -56,22 +56,36 @@ typedef struct{
 
 } SURFACE_3D;
 
+// Patch
 typedef struct{
 
     std::vector<SURFACE_3D> flist;
 
     int n_face;
-    double emission[3];
-    double reflection[3];
 
 } PATCH;
 
+// Model
 typedef struct{
 
-    std::vector<PATCH> list;
+    std::vector<PATCH> plist;
 
-    int n_patch;
     int n_face;
+    int n_patch;
+
+    double emission[3];
+    double reflection[3];
+
+} MODEL;
+
+// Scene
+typedef struct{
+
+    std::vector<MODEL> list;
+
+    int n_face;
+    int n_patch;
+    int n_model;
 
 } SCENE;
 
@@ -100,17 +114,23 @@ double surfaceArea( SURFACE_3D face );
 // Patch
 PATCH createPatch();
 void addPatch( PATCH *patch, SURFACE_3D face );
-void setEmission( PATCH *patch, double r, double g, double b );
-void setReflection( PATCH *patch, double r, double g, double b );
 void drawPatch( const PATCH &patch, int c );
+
 void clipQuadSurface( PATCH *patch );
+
+// Model
+MODEL createModel();
+void addModel( MODEL *model, PATCH patch );
+void setEmission( MODEL *model, double r, double g, double b );
+void setReflection( MODEL *model, double r, double g, double b );
+void clipPatch( MODEL *model );
 
 // Scene
 SCENE createScene();
-void addScene( SCENE *scene, PATCH patch );
-int searchScene( const SCENE &scene, int count, int *p, int *f );
+void addScene( SCENE *scene, MODEL model );
+int searchScene( const SCENE &scene, int count, int *m, int *p, int *f );
 
-//
+// Extension
 double clap( double num, double mboundary, double pboundary );
 int vIntersection( VEC v, int plane, POINT_3D *ipt );
 

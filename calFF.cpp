@@ -199,15 +199,13 @@ void checkInOut( int n, VEC ray[] ){
 
     for( int i = 0 ; i < 5 ; i++ ){
         for( int j = 0 ; j < patch[i].n_face ; j++ ){
-
-                for( int k = 0 ; k < n ; k++ ){
-                    d = ( patch[i].flist[j].center.x * fnormal[k].vector[0] ) + ( patch[i].flist[j].center.y * fnormal[k].vector[1] ) + ( patch[i].flist[j].center.z * fnormal[k].vector[2] );
-                    if( d < 0.0 ){
-                        patch[i].flist[j].visited = 0;
-                        break;
-                    }
+            for( int k = 0 ; k < n ; k++ ){
+                d = ( patch[i].flist[j].center.x * fnormal[k].vector[0] ) + ( patch[i].flist[j].center.y * fnormal[k].vector[1] ) + ( patch[i].flist[j].center.z * fnormal[k].vector[2] );
+                if( d < 0.0 ){
+                    patch[i].flist[j].visited = 0;
+                    break;
                 }
-
+            }
         }
     }
 
@@ -298,7 +296,6 @@ double meshToHC( SURFACE_3D i, SURFACE_3D j ){
                 ray[n].vector[2] = ( j.plist[n].z - ipt.z ) / r;
             }
             FF += clipHemiCube( i.normal, j.n_point, ray ) * dA;
-
 
         }
 

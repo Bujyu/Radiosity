@@ -43,7 +43,7 @@ typedef struct{
 } LINE_3D;
 
 // Surface
-typedef struct{
+typedef struct surface{
 
     POINT_3D *plist;
     POINT_3D center;
@@ -53,6 +53,11 @@ typedef struct{
     VEC normal;
     double FF;
     int visited;
+
+    struct surface* ne;
+    struct surface* nw;
+    struct surface* se;
+    struct surface* sw;
 
 } SURFACE_3D;
 
@@ -100,6 +105,7 @@ void ptPrint( POINT_3D p );
 
 // Surface
 SURFACE_3D addSurface3D( int amount, ... );
+void addSurface3DNode( SURFACE_3D *face, int amount, ... );
 POINT_3D surfaceCenter( const SURFACE_3D &face );
 void setSurface3DNormal( SURFACE_3D *face, double x, double y, double z );
 
@@ -125,10 +131,19 @@ void setEmission( MODEL *model, double r, double g, double b );
 void setReflection( MODEL *model, double r, double g, double b );
 void clipPatch( MODEL *model );
 
+// Refine Clip
+int subdiv( SURFACE_3D *f, int Aeps );
+double FormFactorEstimate( SURFACE_3D *i,  SURFACE_3D *j );
+void refineClip( SURFACE_3D *i, SURFACE_3D *j, double Aeps, double Feps );
+void travelNode( SURFACE_3D *face );
+void delNode( SURFACE_3D *face );
+
 // Scene
 SCENE createScene();
 void addScene( SCENE *scene, MODEL model );
-int searchScene( const SCENE &scene, int count, int *m, int *p, int *f );
+int searchSceneSurface( const SCENE &scene, int count, int *m, int *p, int *f );
+int searchScenePatch( const SCENE &scene, int count, int *m, int *p );
+int searchSceneModel( const SCENE &scene, int count, int *m );
 
 // Extension
 double clap( double num, double mboundary, double pboundary );

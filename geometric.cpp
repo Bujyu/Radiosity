@@ -60,6 +60,12 @@ SURFACE_3D addSurface3D( int amount, ... ){
     face.FF = 0.0;
     face.visited = 0;
 
+    // Refine Clip use only
+    face.ne = NULL;
+    face.nw = NULL;
+    face.se = NULL;
+    face.sw = NULL;
+
     for( i = 0 ; i < amount ; i++ )
         face.plist[i] = va_arg( val, POINT_3D );
 
@@ -68,6 +74,33 @@ SURFACE_3D addSurface3D( int amount, ... ){
     va_end( val );
 
     return face;
+
+}
+
+void addSurface3DNode( SURFACE_3D *face, int amount, ... ){
+
+    int i;
+
+    va_list val;
+    va_start( val, amount );
+
+    (*face).plist = ( POINT_3D* ) malloc( sizeof( POINT_3D ) * amount );
+    (*face).n_point = amount;
+    (*face).FF = 0.0;
+    (*face).visited = 0;
+
+    // Refine Clip use only
+    (*face).ne = NULL;
+    (*face).nw = NULL;
+    (*face).se = NULL;
+    (*face).sw = NULL;
+
+    for( i = 0 ; i < amount ; i++ )
+        (*face).plist[i] = va_arg( val, POINT_3D );
+
+    (*face).center = surfaceCenter( (*face) );
+
+    va_end( val );
 
 }
 
@@ -152,7 +185,15 @@ void interpolation( POINT_3D *ipt, const SURFACE_3D &face, double u, double v ){
 
 double triangleArea( SURFACE_3D face ){
 
-    return -1.0;
+    double a, b, c;
+    double s;
+
+    a = lengthPP( face.plist[0], face.plist[1] );
+    b = lengthPP( face.plist[1], face.plist[2] );
+    c = lengthPP( face.plist[2], face.plist[0] );
+    s = ( a + b + c ) / 2;
+
+    return sqrt( s * ( s - a ) * ( s - b ) * ( s - c ) );
 
 }
 
@@ -267,6 +308,118 @@ void clipQuadSurface( PATCH *patch ){
 
 }
 
+int subdiv( SURFACE_3D *f, double Aeps ){
+
+    if( ( surfaceArea( *f ) / 4 ) < Aeps )
+        return 0;
+
+    if( f->ne != NULL )
+        return 1;
+
+    f->ne = (SURFACE_3D*) malloc( sizeof( SURFACE_3D ) );
+    f->nw = (SURFACE_3D*) malloc( sizeof( SURFACE_3D ) );
+    f->se = (SURFACE_3D*) malloc( sizeof( SURFACE_3D ) );
+    f->sw = (SURFACE_3D*) malloc( sizeof( SURFACE_3D ) );
+
+    // Only for square
+    for( int i = 0 ; i < (int) (*f).n_point ; i++ ){
+        switch( i ){
+            case 0:
+                addSurface3DNode( f->ne, 4,
+                                 (*f).plist[i], centerPP( (*f).plist[i], (*f).plist[(i+1)%(*f).n_point] ),
+                                 (*f).center, centerPP( (*f).plist[(i+3)%(*f).n_point], (*f).plist[i] ) );
+                f->ne->normal = (*f).normal;
+                break;
+            case 1:
+                addSurface3DNode( f->nw, 4,
+                                 (*f).plist[i], centerPP( (*f).plist[i], (*f).plist[(i+1)%(*f).n_point] ),
+                                 (*f).center, centerPP( (*f).plist[(i+3)%(*f).n_point], (*f).plist[i] ) );
+                f->nw->normal = (*f).normal;
+                break;
+            case 2:
+                addSurface3DNode( f->se, 4,
+                                 (*f).plist[i], centerPP( (*f).plist[i], (*f).plist[(i+1)%(*f).n_point] ),
+                                 (*f).center, centerPP( (*f).plist[(i+3)%(*f).n_point], (*f).plist[i] ) );
+                f->se->normal = (*f).normal;
+                break;
+            case 3:
+                addSurface3DNode( f->sw, 4,
+                                 (*f).plist[i], centerPP( (*f).plist[i], (*f).plist[(i+1)%(*f).n_point] ),
+                                 (*f).center, centerPP( (*f).plist[(i+3)%(*f).n_point], (*f).plist[i] ) );
+                f->sw->normal = (*f).normal;
+                break;
+        }
+    }
+
+    return 1;
+
+}
+
+double FormFactorEstimate( SURFACE_3D *i,  SURFACE_3D *j ){
+    return pow( sqrt( surfaceArea( (*j) ) / M_PI ) / lengthPP( i->center, j->center ), 2 );
+}
+
+void refineClip( SURFACE_3D *i, SURFACE_3D *j, double Aeps, double Feps ){
+
+    double Fij, Fji;
+
+    Fij = FormFactorEstimate( i, j );
+    Fji = FormFactorEstimate( j, i );
+
+    if( Fij < Feps && Fji < Feps )
+        return;
+    else{
+        if( Fij > Fji ){
+            if( subdiv( j, Aeps ) ){
+                refineClip( i, j->ne, Aeps, Feps );
+                refineClip( i, j->nw, Aeps, Feps );
+                refineClip( i, j->se, Aeps, Feps );
+                refineClip( i, j->sw, Aeps, Feps );
+            }
+            else
+                return;
+        }
+        else{
+            if( subdiv( i, Aeps ) ){
+                refineClip( j, i->ne, Aeps, Feps );
+                refineClip( j, i->nw, Aeps, Feps );
+                refineClip( j, i->se, Aeps, Feps );
+                refineClip( j, i->sw, Aeps, Feps );
+            }
+            else
+                return;
+        }
+    }
+
+}
+
+std::vector<SURFACE_3D> fcolect;
+void travelNode( SURFACE_3D *face ){
+
+    if( !face->ne && !face->nw && !face->se  && !face->sw  )
+        fcolect.push_back( (*face) );
+    else{
+        travelNode( face->ne );
+        travelNode( face->nw );
+        travelNode( face->se );
+        travelNode( face->sw );
+    }
+
+}
+
+void delNode( SURFACE_3D *face ){
+
+    if( !face->ne && !face->nw && !face->se && !face->sw )
+        free( face );
+    else{
+        delNode( face->ne );
+        delNode( face->nw );
+        delNode( face->se );
+        delNode( face->sw );
+    }
+
+}
+
 // Model
 MODEL createModel(){
 
@@ -334,7 +487,7 @@ void addScene( SCENE *scene, MODEL model ){
 
 }
 
-int searchScene( const SCENE &scene, int count, int *m, int *p, int *f ){
+int searchSceneSurface( const SCENE &scene, int count, int *m, int *p, int *f ){
 
     if( count > scene.n_face )
         return 0;
@@ -353,6 +506,36 @@ int searchScene( const SCENE &scene, int count, int *m, int *p, int *f ){
     }
 
     return 0;
+
+}
+
+int searchScenePatch( const SCENE &scene, int count, int *m, int *p ){
+
+    if( count > scene.n_patch )
+        return 0;
+
+    for( int i = 0 ; i < scene.n_model ; i++ ){
+        if( count < scene.list[i].n_patch ){
+            *m = i;
+            *p = count;
+            return 1;
+        }
+        else
+            count -= scene.list[i].n_patch;
+    }
+
+    return 0;
+
+}
+
+int searchSceneModel( const SCENE &scene, int count, int *m ){
+
+    if( count > scene.n_model )
+        return 0;
+
+    *m = count;
+
+    return 1;
 
 }
 

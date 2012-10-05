@@ -12,13 +12,14 @@
 #include "mesh.hpp"
 #include "geometric.h"
 
-#define CLIP 4
+#define CLIP 2
+#define FF_TYPE 1
 
 extern void hemiCubeGenrator();
 extern void drawHemiCube();
 extern void test();
 
-extern float occlusion( SURFACE_3D i, SURFACE_3D j );
+extern float occlusion( SURFACE_3D i, SURFACE_3D j, int isn, int jsn );
 
 extern double meshToHC( SURFACE_3D i, SURFACE_3D j );
 extern double calMeshFF( SURFACE_3D i, VEC inormal, SURFACE_3D j, VEC jnormal );
@@ -366,10 +367,10 @@ void init(){
     //sphereCreate( 4, -6, 0 );
     //setReflection( &sphere, 0.54, 0.54, 0.54 );
 
-    squareCreate( -4, -6, 0 );
-    setReflection( &square, 0.54, 0.54, 0.54 );
-    for( int i = 0 ; i < CLIP - 2 ; i++ )
-        clipPatch( &square );
+    //squareCreate( -4, -6, 0 );
+    //setReflection( &square, 0.54, 0.54, 0.54 );
+    //for( int i = 0 ; i < CLIP - 2 ; i++ )
+        //clipPatch( &square );
 
     wallCreate();
     setReflection( &wall[0], 0.84, 0.84, 0.84 );
@@ -380,7 +381,7 @@ void init(){
 
     setReflection( &lightSource, 0.8, 0.8, 0.8 );
     setEmission( &lightSource, 1.27, 1.27, 1.27 );
-
+/*
     for( int i = 0 ; i < CLIP ; i++ ){
         clipPatch( &wall[0] );
         clipPatch( &wall[1] );
@@ -389,21 +390,65 @@ void init(){
         clipPatch( &wall[4] );
         clipPatch( &lightSource );
     }
-
+*/
     scene = createScene();
     // Light
     addScene( &scene, lightSource );
 
     // Model
     //addScene( &scene, sphere );
-    addScene( &scene, square );
+    //addScene( &scene, square );
     addScene( &scene, wall[0] );
     addScene( &scene, wall[1] );
     addScene( &scene, wall[2] );
     addScene( &scene, wall[3] );
     addScene( &scene, wall[4] );
 
-    printf( "P:%d S:%d\n", square.n_patch, square.n_face );
+    // refine clip
+    for( int i = 0 ; i < scene.n_face ; i++ ){
+        for( int j = i + 1 ; j < scene.n_face ; j++ ){
+            searchSceneSurface( scene, i, &im, &ip, &iface );
+            searchSceneSurface( scene, j, &jm, &jp, &jface );
+            refineClip( &scene.list[im].plist[ip].flist[iface], &scene.list[jm].plist[jp].flist[jface], 1, 0.1 );
+        }
+    }
+
+    extern std::vector<SURFACE_3D> fcolect;
+    SURFACE_3D ftemp;
+    for( int i = 0 ; i < scene.n_patch ; i++ ){
+        searchScenePatch( scene, i, &im, &ip );
+
+        // Clear vector
+        fcolect.clear();
+
+        ftemp = scene.list[im].plist[ip].flist[0];
+        scene.list[im].plist[ip].flist.pop_back();
+
+        travelNode( &ftemp );
+/*
+        delNode( ftemp.ne );
+        delNode( ftemp.nw );
+        delNode( ftemp.se );
+        delNode( ftemp.sw );
+*/
+        // Store element to patch
+        scene.list[im].plist[ip].n_face = fcolect.size();
+        for( int j = 0 ; j < (int) fcolect.size() ; j++ )
+            scene.list[im].plist[ip].flist.push_back( fcolect[j] );
+
+    }
+
+    // Update information
+    scene.n_face = 0;
+    for( int i = 0 ; i < scene.n_model ; i++ ){
+        scene.list[i].n_face = 0;
+        for( int j = 0 ; j < scene.list[i].n_patch ; j++ ){
+            scene.list[i].n_face += scene.list[i].plist[j].n_face;
+        }
+        scene.n_face += scene.list[i].n_face;
+    }
+
+    //printf( "P:%d S:%d\n", square.n_patch, square.n_face );
     printf( "M:%d P:%d S:%d\n", scene.n_model, scene.n_patch, scene.n_face );
 
     // Hemi-Cube Generate
@@ -420,13 +465,13 @@ void init(){
     printf("Start occlusion checking\n");
     QueryPerformanceCounter(&t1);
     for( int i = 0 ; i < scene.n_face ; i++ ){
-        searchScene( scene, i, &im, &ip, &iface );
+        searchSceneSurface( scene, i, &im, &ip, &iface );
         for( int j = i ; j < scene.n_face ; j++ ){
             if( i == j )
                 visible.matrix[i][j] = 0.0;
             else{
-                searchScene( scene, j, &jm, &jp, &jface );
-                visible.matrix[i][j] = occlusion( scene.list[im].plist[ip].flist[iface], scene.list[jm].plist[jp].flist[jface] );
+                searchSceneSurface( scene, j, &jm, &jp, &jface );
+                visible.matrix[i][j] = occlusion( scene.list[im].plist[ip].flist[iface], scene.list[jm].plist[jp].flist[jface], i, j );
                 visible.matrix[j][i] = visible.matrix[i][j];
             }
         }
@@ -442,7 +487,7 @@ void init(){
 
     for( int i = 0 ; i < scene.n_face ; i++ ){
 
-        searchScene( scene, i, &im, &ip, &iface );
+        searchSceneSurface( scene, i, &im, &ip, &iface );
 
         e[0].vector[i] = scene.list[im].emission[0];
         e[1].vector[i] = scene.list[im].emission[1];
@@ -461,15 +506,16 @@ void init(){
     printf("Start FF calculation\n");
     QueryPerformanceCounter(&t1);
     for( int i = 0 ; i < scene.n_face ; i++ ){
-        searchScene( scene, i, &im, &ip, &iface );
+        searchSceneSurface( scene, i, &im, &ip, &iface );
         for( int j = i ; j < scene.n_face ; j++ ){
             if( i == j )
                 FF.matrix[i][j] = 0.0;
             else{
-                searchScene( scene, j, &jm, &jp, &jface );
-                FF.matrix[i][j] = visible.matrix[i][j] * meshToHC( scene.list[im].plist[ip].flist[iface], scene.list[jm].plist[jp].flist[jface] );
-                //FF.matrix[i][j] = visible.matrix[i][j] * calMeshFF( scene.list[im].plist[ip].flist[iface], scene.list[im].plist[ip].flist[iface].normal,
-                //                                                    scene.list[jm].plist[jp].flist[jface], scene.list[jm].plist[jp].flist[jface].normal );
+                searchSceneSurface( scene, j, &jm, &jp, &jface );
+                FF.matrix[i][j] = FF_TYPE ?
+                                  visible.matrix[i][j] * meshToHC( scene.list[im].plist[ip].flist[iface], scene.list[jm].plist[jp].flist[jface] ) :
+                                  visible.matrix[i][j] * calMeshFF( scene.list[im].plist[ip].flist[iface], scene.list[im].plist[ip].flist[iface].normal,
+                                                                    scene.list[jm].plist[jp].flist[jface], scene.list[jm].plist[jp].flist[jface].normal );
                 FF.matrix[j][i] = FF.matrix[i][j];
             }
         }
@@ -519,12 +565,20 @@ void content( void ){
 */
 
     int mc, pc, fc;
+    int fm, fp, f;
+    GLfloat color[3];
 
     //for( int i = 1 * scene.list[0].n_face ; i < scene.n_face ; i++ ){
     for( int i = 0 ; i < scene.n_face ; i++ ){
 
-        glColor3f( b[0].vector[i], b[1].vector[i], b[2].vector[i] );
-        searchScene( scene, i, &mc, &pc, &fc );
+        searchSceneSurface( scene, i, &fm, &fp, &f );
+
+        color[0] = clap( b[0].vector[i], 0.0, 1.0 );
+        color[1] = clap( b[1].vector[i], 0.0, 1.0 );
+        color[2] = clap( b[2].vector[i], 0.0, 1.0 );
+
+        glColor3f( color[0], color[1], color[2] );
+        searchSceneSurface( scene, i, &mc, &pc, &fc );
         glPolygonMode( GL_BACK, GL_LINE );
         glBegin( GL_POLYGON );
         for( int k = 0 ; k < scene.list[mc].plist[pc].flist[fc].n_point ; k++ ){

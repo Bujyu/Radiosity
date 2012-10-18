@@ -12,7 +12,7 @@
 #include "mesh.hpp"
 #include "geometric.h"
 
-#define CLIP 2
+#define CLIP 4
 #define FF_TYPE 1
 
 extern void hemiCubeGenrator();
@@ -34,10 +34,12 @@ int gw, gh;
 int mainwin;
 int viewer;
 
+int colorMode;
+
 //Model
 MODEL sphere;
-MODEL square;
-MODEL wall[5];
+MODEL square[2];
+MODEL wall[6];
 MODEL lightSource;
 
 SCENE scene;
@@ -94,13 +96,13 @@ void sphereCreate( double x, double y, double z ){
 
 }
 
-void squareCreate( double x, double y, double z ){
+void squareCreate( MODEL *target, double x, double y, double z ){
 
     PATCH patch;
     SURFACE_3D face;
     POINT_3D pt[8];
 
-    square = createModel();
+    *target = createModel();
 
     pt[0] = addPoint3D( -2 + x, -4 + y, -2 + z );
     pt[1] = addPoint3D(  2 + x, -4 + y, -2 + z );
@@ -116,42 +118,65 @@ void squareCreate( double x, double y, double z ){
     face = addSurface3D( 4, pt[3], pt[2], pt[1], pt[0] );
     setSurface3DNormal( &face, 0, 0, -1 );
     addPatch( &patch, face );
-    addModel( &square, patch );
+    addModel( target, patch );
 
     // 2 6 5 1
     patch = createPatch();
     face = addSurface3D( 4, pt[2], pt[6], pt[5], pt[1] );
     setSurface3DNormal( &face, 1, 0, 0 );
     addPatch( &patch, face );
-    addModel( &square, patch );
+    addModel( target, patch );
 
     // 6 7 4 5
     patch = createPatch();
     face = addSurface3D( 4, pt[6], pt[7], pt[4], pt[5] );
     setSurface3DNormal( &face, 0, 0, 1 );
     addPatch( &patch, face );
-    addModel( &square, patch );
+    addModel( target, patch );
 
     // 7 3 0 4
     patch = createPatch();
     face = addSurface3D( 4, pt[7], pt[3], pt[0], pt[4] );
     setSurface3DNormal( &face, -1, 0, 0 );
     addPatch( &patch, face );
-    addModel( &square, patch );
+    addModel( target, patch );
 
     //Buttom 0 1 5 4
     patch = createPatch();
     face = addSurface3D( 4, pt[0], pt[1], pt[5], pt[4] );
     setSurface3DNormal( &face, 0, -1, 0 );
     addPatch( &patch, face );
-    addModel( &square, patch );
+    addModel( target, patch );
 
     //Top 7 6 2 3
     patch = createPatch();
     face = addSurface3D( 4, pt[7], pt[6], pt[2], pt[3] );
     setSurface3DNormal( &face, 0, 1, 0 );
     addPatch( &patch, face );
-    addModel( &square, patch );
+    addModel( target, patch );
+
+}
+
+void lightCreate(){
+
+    PATCH patch;
+    SURFACE_3D face;
+    POINT_3D pt[12];
+
+    lightSource = createModel();
+
+
+    pt[0] = addPoint3D( 2, 9, -2 );
+    pt[1] = addPoint3D( -2, 9, -2 );
+    pt[2] = addPoint3D( 2, 9, 2 );
+    pt[3] = addPoint3D( -2, 9, 2 );
+
+    // Light Source
+    patch = createPatch();
+    face = addSurface3D( 4, pt[2], pt[3], pt[1], pt[0] );
+    setSurface3DNormal( &face, 0, -1, 0 );
+    addPatch( &patch, face );
+    addModel( &lightSource, patch );
 
 }
 
@@ -166,8 +191,7 @@ void wallCreate(){
     wall[2] = createModel();
     wall[3] = createModel();
     wall[4] = createModel();
-
-    lightSource = createModel();
+    //wall[5] = createModel();
 
     pt[0] = addPoint3D( -10, -10, -10 );
     pt[1] = addPoint3D( 10, -10, -10 );
@@ -224,7 +248,7 @@ void wallCreate(){
     //face = addSurface3D( 4, pt[8], pt[9], pt[10], pt[11] );
     setSurface3DNormal( &face, 0, 0, -1 );
     addPatch( &patch, face );
-    addModel( &lightSource, patch );
+    addModel( &wall[5], patch );
 
 }
 
@@ -272,15 +296,9 @@ void reshape( int w, int h ){
 void keyboard( unsigned char key, int x, int y ){
 
     switch( key ){
-        case 's':
-        case 'S':
-            //meshSplit( &mesh );
-            //meshSplit( &mesh2 );
-            break;
-        case 'e':
-        case 'E':
-            //edgeMeshSplit( &mesh );
-            //edgeMeshSplit( &mesh2 );
+        case 'M':
+        case 'm':
+            colorMode ^= 1;
             break;
         default:
             break;
@@ -355,6 +373,9 @@ void axis(){
 
 void init(){
 
+    // Initial Var
+    colorMode = 0;  // Diffuse
+
     int im, ip, iface;
     int jm, jp, jface;
 
@@ -367,10 +388,15 @@ void init(){
     //sphereCreate( 4, -6, 0 );
     //setReflection( &sphere, 0.54, 0.54, 0.54 );
 
-    //squareCreate( -4, -6, 0 );
-    //setReflection( &square, 0.54, 0.54, 0.54 );
-    //for( int i = 0 ; i < CLIP - 2 ; i++ )
-        //clipPatch( &square );
+    squareCreate( &square[0], -4, -6, 0 );
+    setReflection( &square[0], 0.54, 0.54, 0.54 );
+
+    squareCreate( &square[1], 4, -6, 0 );
+    setReflection( &square[1], 0.54, 0.54, 0.54 );
+    for( int i = 0 ; i < CLIP - 2 ; i++ ){
+        clipPatch( &square[0] );
+        clipPatch( &square[1] );
+    }
 
     wallCreate();
     setReflection( &wall[0], 0.84, 0.84, 0.84 );
@@ -378,38 +404,45 @@ void init(){
     setReflection( &wall[2], 0.0, 0.0, 1.0 );
     setReflection( &wall[3], 0.54, 0.54, 0.54 );
     setReflection( &wall[4], 0.84, 0.84, 0.84 );
+    setReflection( &wall[5], 0.84, 0.84, 0.84 );
 
+    lightCreate();
     setReflection( &lightSource, 0.8, 0.8, 0.8 );
     setEmission( &lightSource, 1.27, 1.27, 1.27 );
-/*
+
     for( int i = 0 ; i < CLIP ; i++ ){
         clipPatch( &wall[0] );
         clipPatch( &wall[1] );
         clipPatch( &wall[2] );
         clipPatch( &wall[3] );
         clipPatch( &wall[4] );
+        clipPatch( &wall[5] );
         clipPatch( &lightSource );
     }
-*/
+
+
     scene = createScene();
     // Light
     addScene( &scene, lightSource );
 
     // Model
     //addScene( &scene, sphere );
-    //addScene( &scene, square );
+    addScene( &scene, square[0] );
+    addScene( &scene, square[1] );
+
     addScene( &scene, wall[0] );
     addScene( &scene, wall[1] );
     addScene( &scene, wall[2] );
     addScene( &scene, wall[3] );
     addScene( &scene, wall[4] );
-
+    //addScene( &scene, wall[5] );
+/*
     // refine clip
     for( int i = 0 ; i < scene.n_face ; i++ ){
         for( int j = i + 1 ; j < scene.n_face ; j++ ){
             searchSceneSurface( scene, i, &im, &ip, &iface );
             searchSceneSurface( scene, j, &jm, &jp, &jface );
-            refineClip( &scene.list[im].plist[ip].flist[iface], &scene.list[jm].plist[jp].flist[jface], 1, 0.1 );
+            refineClip( &scene.list[im].plist[ip].flist[iface], &scene.list[jm].plist[jp].flist[jface], 6, 0.3 );
         }
     }
 
@@ -425,12 +458,12 @@ void init(){
         scene.list[im].plist[ip].flist.pop_back();
 
         travelNode( &ftemp );
-/*
-        delNode( ftemp.ne );
-        delNode( ftemp.nw );
-        delNode( ftemp.se );
-        delNode( ftemp.sw );
-*/
+
+        //delNode( ftemp.ne );
+        //delNode( ftemp.nw );
+        //delNode( ftemp.se );
+        //delNode( ftemp.sw );
+
         // Store element to patch
         scene.list[im].plist[ip].n_face = fcolect.size();
         for( int j = 0 ; j < (int) fcolect.size() ; j++ )
@@ -447,8 +480,7 @@ void init(){
         }
         scene.n_face += scene.list[i].n_face;
     }
-
-    //printf( "P:%d S:%d\n", square.n_patch, square.n_face );
+*/
     printf( "M:%d P:%d S:%d\n", scene.n_model, scene.n_patch, scene.n_face );
 
     // Hemi-Cube Generate
@@ -532,9 +564,6 @@ void init(){
 
     glEnable( GL_DEPTH_TEST );
 
-    //readMesh( &mesh, (char*) "Models/five-face.off", center, radius );
-    //readMesh( &mesh2, (char*) "Models/mushroom.off", center, radius );
-
     //Initial color
     glClearColor( 0.0, 0.0, 0.0, 1.0 );
 
@@ -551,12 +580,13 @@ void display(){}
 
 void content( void ){
 
+    int mc, pc, fc;
+    int fm, fp, f;
+    GLfloat color[3];
+
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
     axis();
-
-    //drawMesh( mesh );
-    //drawMesh( mesh2 );
 
     //drawHemiCube();
 /*
@@ -564,18 +594,14 @@ void content( void ){
         drawPatch( scene.list[i], i < 1 ? 1 : 3 );
 */
 
-    int mc, pc, fc;
-    int fm, fp, f;
-    GLfloat color[3];
-
     //for( int i = 1 * scene.list[0].n_face ; i < scene.n_face ; i++ ){
     for( int i = 0 ; i < scene.n_face ; i++ ){
 
         searchSceneSurface( scene, i, &fm, &fp, &f );
 
-        color[0] = clap( b[0].vector[i], 0.0, 1.0 );
-        color[1] = clap( b[1].vector[i], 0.0, 1.0 );
-        color[2] = clap( b[2].vector[i], 0.0, 1.0 );
+        color[0] = colorMode ? scene.list[fm].reflection[0] : clap( b[0].vector[i], 0.0, 1.0 );
+        color[1] = colorMode ? scene.list[fm].reflection[1] : clap( b[1].vector[i], 0.0, 1.0 );
+        color[2] = colorMode ? scene.list[fm].reflection[2] : clap( b[2].vector[i], 0.0, 1.0 );
 
         glColor3f( color[0], color[1], color[2] );
         searchSceneSurface( scene, i, &mc, &pc, &fc );

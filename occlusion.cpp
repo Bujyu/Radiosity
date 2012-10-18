@@ -5,6 +5,16 @@
 
 extern SCENE scene;
 
+int betweenCheck( SURFACE_3D i, SURFACE_3D j, SURFACE_3D f ){
+
+    if( ( i.normal.vector[0] * f.center.x + i.normal.vector[1] * f.center.y + i.normal.vector[2] * f.center.z ) < 0 ||
+        ( j.normal.vector[0] * f.center.x + j.normal.vector[1] * f.center.y + j.normal.vector[2] * f.center.z ) < 0 )
+        return 0;
+
+    return 1;
+
+}
+
 int checkOcclusion( int n, VEC *ray, SURFACE_3D face ){
 
     VEC *fnormal = (VEC*) malloc( sizeof( VEC ) * n );
@@ -76,7 +86,10 @@ float occlusion( SURFACE_3D i, SURFACE_3D j, int isn, int jsn ){
 
             if( n == isn || n == jsn )
                 continue;
-
+/*
+            if( !betweenCheck( i, j, scene.list[im].plist[ip].flist[iface] ) )
+                continue;
+*/
             if( checkOcclusion( j.n_point, ray, scene.list[im].plist[ip].flist[iface] ) ){
                 visibility = 0.0;
                 break;

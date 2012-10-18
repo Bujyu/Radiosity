@@ -29,7 +29,7 @@ double calFF( POINT_3D a, VEC nor_a, POINT_3D b, VEC nor_b ){
     cosA = vCos( nor_a, aTob );
     cosB = vCos( nor_b, bToa );
 
-    FF = ( r - 0.0 < 0.000001 ) ?  0.0 : ( clap( cosA, 0.0, 1.0 ) * clap( cosB, 0.0, 1.0 ) ) / ( PI * r * r );
+    FF = ( r < 0.000001 ) ?  0.0 : ( clap( cosA, 0.0, 1.0 ) * clap( cosB, 0.0, 1.0 ) ) / ( PI * r * r );
 
     vDestroy( aTob );
     vDestroy( bToa );

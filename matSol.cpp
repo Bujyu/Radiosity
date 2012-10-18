@@ -7,37 +7,28 @@
 ///return 1 if false
 int converge( VEC b, VEC e, VEC reflection, MAT FF, double boundary ){
 
-    MAT t = mCreate( FF.col, FF.row, EMPTY );
-    MAT r, mb;
-    VEC minusE;
-    VEC rv, rva;
+    VEC rv = vCreate( b.elements );
     int i, j;
-    double l;
+    int flag = 0;
+    double r;
 
-    minusE = vScalar( e, -1 );
-
-    for( i = 0 ; i < FF.row ; i++ )
+    for( i = 0 ; i < FF.row ; i++ ){
+        r = 0;
         for( j = 0 ; j < FF.col ; j++ )
-            t.matrix[i][j] = ( i == j ) ? 1 -( reflection.vector[i] * FF.matrix[i][j] ) :
-                                            -( reflection.vector[i] * FF.matrix[i][j] );
+            r += ( i == j ? 1 : -( reflection.vector[i] * FF.matrix[i][j] ) ) * b.vector[j];
+        rv.vector[i] = r;
+    }
 
-    mb = vecToMat( b );
-    r = mMultiplication( t, mb );
-    rv = matToVec( r, 0 );
-    rva = vAddition( rv, minusE );
-    l = vLength( rva );
+    for( i = 0 ; i < rv.elements ; i++ ){
+        if( fabs( rv.vector[i] - e.vector[i] ) > boundary ){
+            flag = 1;
+            break;
+        }
+    }
 
-    vDestroy( minusE );
     vDestroy( rv );
-    vDestroy( rva );
-    mDestroy( t );
-    mDestroy( r );
-    mDestroy( mb );
 
-    if( l > boundary )
-        return 1;
-
-    return 0;
+    return flag;
 
 }
 
@@ -46,10 +37,8 @@ VEC matrix_solution( VEC emission, VEC reflection, MAT FF ){
     VEC x = vClone( emission );
     VEC nx = vCreate( emission.elements );
     int i, j;
-    //int k;
     double r;
 
-    //k = 0;
     do{
 
         for( i = 0 ; i < emission.elements ; i++ ){
@@ -64,11 +53,7 @@ VEC matrix_solution( VEC emission, VEC reflection, MAT FF ){
         for( i = 0; i < x.elements ; i++ )
             x.vector[i] = nx.vector[i];
 
-        //k++;
-
-    }while( converge( x, emission, reflection, FF, 0.001 ) );
-
-    //printf("k = %d\n", k);
+    }while( converge( x, emission, reflection, FF, 0.0001 ) );
 
     vDestroy( nx );
 

@@ -10,7 +10,7 @@
 #include "vector.hpp"
 #include "matrix.hpp"
 
-#define SIDE 8
+#define SIDE 16
 #ifndef PI
     #define PI 3.1415926535
 #endif

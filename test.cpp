@@ -12,7 +12,7 @@
 #include "mesh.hpp"
 #include "geometric.h"
 
-#define CLIP 4
+#define CLIP 3
 #define FF_TYPE 1
 
 extern void hemiCubeGenrator();
@@ -385,18 +385,14 @@ void init(){
     //float center[3], radius = 0.0;
 
     //Model Create
-    //sphereCreate( 4, -6, 0 );
-    //setReflection( &sphere, 0.54, 0.54, 0.54 );
+    sphereCreate( 4, -6, 0 );
+    setReflection( &sphere, 0.54, 0.54, 0.54 );
 
     squareCreate( &square[0], -4, -6, 0 );
     setReflection( &square[0], 0.54, 0.54, 0.54 );
 
     squareCreate( &square[1], 4, -6, 0 );
     setReflection( &square[1], 0.54, 0.54, 0.54 );
-    for( int i = 0 ; i < CLIP - 2 ; i++ ){
-        clipPatch( &square[0] );
-        clipPatch( &square[1] );
-    }
 
     wallCreate();
     setReflection( &wall[0], 0.84, 0.84, 0.84 );
@@ -404,11 +400,16 @@ void init(){
     setReflection( &wall[2], 0.0, 0.0, 1.0 );
     setReflection( &wall[3], 0.54, 0.54, 0.54 );
     setReflection( &wall[4], 0.84, 0.84, 0.84 );
-    setReflection( &wall[5], 0.84, 0.84, 0.84 );
+    //setReflection( &wall[5], 0.84, 0.84, 0.84 );
 
     lightCreate();
     setReflection( &lightSource, 0.8, 0.8, 0.8 );
     setEmission( &lightSource, 1.27, 1.27, 1.27 );
+
+    for( int i = 0 ; i < CLIP - 2 ; i++ ){
+        clipPatch( &square[0] );
+        clipPatch( &square[1] );
+    }
 
     for( int i = 0 ; i < CLIP ; i++ ){
         clipPatch( &wall[0] );
@@ -416,10 +417,9 @@ void init(){
         clipPatch( &wall[2] );
         clipPatch( &wall[3] );
         clipPatch( &wall[4] );
-        clipPatch( &wall[5] );
+        //clipPatch( &wall[5] );
         clipPatch( &lightSource );
     }
-
 
     scene = createScene();
     // Light
@@ -554,6 +554,8 @@ void init(){
     }
     QueryPerformanceCounter(&t2);
     printf("Complete FF calculation\t\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
+
+    //mPrint( FF );
 
     printf("Start matrix solution\n");
     QueryPerformanceCounter(&t1);

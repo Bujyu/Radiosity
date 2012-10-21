@@ -33,10 +33,10 @@ void mPrint( MAT m ){
 
     printf( "Matrix =\n" );
     for( i = 0 ; i < m.row ; i++ ){
-        printf( "%c ", i == 0 ? '[' : ' ' );
+        printf( "%c ", i == 0 ? '[' : '\n' );
         for( j = 0 ; j < m.col ; j++ )
             printf( "%lf%s", m.matrix[i][j], j != m.col - 1 ? ", " : " " );
-        printf( " %c\n", i == m.row - 1 ? ']' : ' ' );
+        printf( " %c\n", i == m.row - 1 ? ']' : ';' );
     }
     printf("\n");
 

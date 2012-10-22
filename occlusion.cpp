@@ -9,16 +9,18 @@ extern SCENE scene;
 
 int intersectionTri( SURFACE_3D f, POINT_3D st, POINT_3D ed ){
 
-    VEC ray = vectorPP( ed, st );
+    VEC ray;
     VEC edge1, edge2;
     VEC pvec, tvec, qvec;
     double det, inv_det;
-    //double t;
+    double t;
     double u, v;
 
+    ray = vectorPP( st, ed );
+
     /* find vectors for two edges sharing vert0 */
-    edge1 = vectorPP( f.plist[1], f.plist[0] );
-    edge2 = vectorPP( f.plist[2], f.plist[0] );
+    edge1 = vectorPP( f.plist[0], f.plist[1] );
+    edge2 = vectorPP( f.plist[0], f.plist[2] );
 
     /* begin calculating determinant - also used to calculate U parameter */
     pvec = vCross( ray, edge2 );
@@ -36,7 +38,7 @@ int intersectionTri( SURFACE_3D f, POINT_3D st, POINT_3D ed ){
     inv_det = 1.0 / det;
 
     /* calculate distance from vert0 to ray origin */
-    tvec = vectorPP(st, f.plist[0]);
+    tvec = vectorPP(f.plist[0], st);
 
     /* calculate U parameter and test bounds */
     u = vDot(tvec, pvec) * inv_det;
@@ -65,7 +67,7 @@ int intersectionTri( SURFACE_3D f, POINT_3D st, POINT_3D ed ){
     }
 
     /* calculate t, ray intersects triangle */
-    //t = vDot(edge2, qvec) * inv_det;
+    t = vDot(edge2, qvec) * inv_det;
 
     vDestroy( edge1 );
     vDestroy( edge2 );
@@ -74,7 +76,7 @@ int intersectionTri( SURFACE_3D f, POINT_3D st, POINT_3D ed ){
     vDestroy( qvec );
     vDestroy( ray );
 
-    return 1;
+    return t >= 0.0;
 
 }
 
@@ -85,15 +87,12 @@ int intersectionSqr( SURFACE_3D f, POINT_3D st, POINT_3D ed ){
 
     // Split square to two triangles
     tri_1 = addSurface3D( 3, f.plist[0], f.plist[1], f.plist[2]  );
-    tri_1.normal = vClone( f.normal );
-
     tri_2 = addSurface3D( 3, f.plist[2], f.plist[3], f.plist[0]  );
-    tri_2.normal = vClone( f.normal );
 
-    flag = intersectionTri( f, st, ed ) | intersectionTri( f, st, ed );
+    flag = intersectionTri( tri_1, st, ed ) | intersectionTri( tri_2, st, ed );
 
-    vDestroy( tri_2.normal );
-    vDestroy( tri_1.normal );
+    free( tri_1.plist );
+    free( tri_2.plist );
 
     return flag;
 
@@ -119,6 +118,40 @@ int betweenCheck( SURFACE_3D i, SURFACE_3D j, SURFACE_3D f ){
         return 0;
 
     return 1;
+
+}
+
+//09 08 07 06   15 05 01 14
+//10 15 14 05   04 03 00 02
+//11 12 13 04   08 06 09 10
+//00 01 02 03   12 07 11 13
+#define STEP 0.125
+double stUV[16][2] = { { STEP, STEP }, { 0.25 + STEP, STEP }, { 0.5 + STEP, STEP }, { 0.75 + STEP, STEP },
+                       { 0.75 + STEP, 0.25 + STEP }, { 0.75 + STEP,  0.5 + STEP }, { 0.5 + STEP, 0.75 + STEP }, { 0.5 + STEP, 0.75 + STEP },
+                       { 0.25 + STEP, 0.75 + STEP }, { STEP,  0.75 + STEP }, { STEP, 0.5 + STEP }, { STEP, 0.25 + STEP },
+                       { 0.25 + STEP, 0.25 + STEP }, { 0.5 + STEP,  0.25 + STEP }, { 0.5 + STEP, 0.5 + STEP }, { 0.25 + STEP, 0.5 + STEP } };
+
+double edUV[16][2] = { { 0.25 + STEP, 0.25 + STEP }, { 0.5 + STEP, 0.75 + STEP }, { STEP, 0.25 + STEP }, { 0.5 + STEP,  0.25 + STEP },
+                       { 0.25 + STEP, 0.75 + STEP }, { 0.5 + STEP, 0.75 + STEP }, { STEP,  0.75 + STEP }, { STEP, 0.5 + STEP },
+                       { 0.75 + STEP, 0.25 + STEP }, { 0.75 + STEP, STEP }, { STEP, STEP }, { 0.5 + STEP, STEP },
+                       { 0.25 + STEP, 0.5 + STEP }, { 0.75 + STEP,  0.5 + STEP }, { 0.25 + STEP, STEP }, { 0.5 + STEP, 0.5 + STEP } };
+
+void checkOcclusionRayTrace( SURFACE_3D i, SURFACE_3D j, SURFACE_3D face, int flag[] ){
+
+    POINT_3D st, ed;
+    int n;
+
+    for( n = 0 ; n < 16 ; n++  ){
+
+        if( flag[n] )
+            continue;
+
+        interpolation( &st, i, stUV[n][0], stUV[n][1] );
+        interpolation( &ed, j, edUV[n][0], edUV[n][1] );
+
+        flag[n] = raytrace( face, st, ed );
+
+    }
 
 }
 
@@ -159,9 +192,10 @@ float occlusion( SURFACE_3D i, SURFACE_3D j, int isn, int jsn ){
     double cosA, cosB;
 
     // For pass2
-    VEC *ray;
+    //VEC *ray;
     int im, ip, iface;
-    double r;
+    //double r;
+    int flag[16];
 
     // Pass 1
     aTob = vectorPP( i.center, j.center );
@@ -175,7 +209,7 @@ float occlusion( SURFACE_3D i, SURFACE_3D j, int isn, int jsn ){
 
     // Pass 2
     if( visibility > 0.0 ){
-
+        /*
         ray = (VEC*) malloc( sizeof( VEC ) * ( i.n_point > j.n_point ? i.n_point : j.n_point ) );
 
         // the center point of i to the terminal points of j
@@ -186,7 +220,9 @@ float occlusion( SURFACE_3D i, SURFACE_3D j, int isn, int jsn ){
             ray[n].vector[1] = ( j.plist[n].y - i.center.y ) / r;
             ray[n].vector[2] = ( j.plist[n].z - i.center.z ) / r;
         }
-
+        */
+        // Clear flag
+        memset( flag, 0, 16 * sizeof( int ) );
         for( int n = 0 ; n < scene.n_face ; n++ ){
 
             searchSceneSurface( scene, n, &im, &ip, &iface );
@@ -197,17 +233,24 @@ float occlusion( SURFACE_3D i, SURFACE_3D j, int isn, int jsn ){
             if( !betweenCheck( i, j, scene.list[im].plist[ip].flist[iface] ) )
                 continue;
 
+            /*
             if( checkOcclusion( j.n_point, ray, scene.list[im].plist[ip].flist[iface] ) ){
                 visibility = 0.0;
                 break;
-            }
+            }*/
+
+            checkOcclusionRayTrace( i, j, scene.list[im].plist[ip].flist[iface], flag );
 
         }
 
+        visibility = 0.0;
+        for( int n = 0 ; n < 16 ; n++ )
+            visibility += 0.0625 * !flag[n];
+        /*
         for( int n = 0 ; n < j.n_point ; n++ )
             vDestroy( ray[n] );
         free( ray );
-
+        */
     }
 
     vDestroy( aTob );

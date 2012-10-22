@@ -4,7 +4,6 @@
 
 #include <windows.h>
 #include <gl/gluit.h>
-#include <gl.hh>
 
 #include "matrix.hpp"
 #include "vector.hpp"
@@ -510,6 +509,8 @@ void init(){
     }
     QueryPerformanceCounter(&t2);
     printf("Complete occlusion checking\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
+
+    //mPrint( visible );
 
     // Emissio and Reflection setting
     for( int i = 0 ; i < 3 ; i++ ){

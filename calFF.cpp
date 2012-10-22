@@ -217,7 +217,7 @@ void checkInOut( int n, VEC ray[] ){
 
 double clipPlane( int n, VEC ray[] ){
 
-    double FF;
+    double FF = 0.0;
 
     checkInOut( n, ray );
     for( int i = 0 ; i < 5 ; i++ )

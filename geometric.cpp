@@ -136,19 +136,19 @@ POINT_3D surfaceCenter( const SURFACE_3D &face ){
 void interpolationSqr( POINT_3D *ipt, const SURFACE_3D &face, double u, double v ){
 
     (*ipt).x = ( 1.0 - u ) * ( 1.0 - v ) * face.plist[0].x +
-            ( 1.0 - u ) * v * face.plist[1].x +
-            u * v * face.plist[2].x +
-            u * ( 1.0 - v ) * face.plist[3].x;
+                ( 1.0 - u ) * v * face.plist[1].x +
+                u * v * face.plist[2].x +
+                u * ( 1.0 - v ) * face.plist[3].x;
 
     (*ipt).y = ( 1.0 - u ) * ( 1.0 - v ) * face.plist[0].y +
-            ( 1.0 - u ) * v * face.plist[1].y +
-            u * v * face.plist[2].y +
-            u * ( 1.0 - v ) * face.plist[3].y;
+                ( 1.0 - u ) * v * face.plist[1].y +
+                u * v * face.plist[2].y +
+                u * ( 1.0 - v ) * face.plist[3].y;
 
     (*ipt).z = ( 1.0 - u ) * ( 1.0 - v ) * face.plist[0].z +
-            ( 1.0 - u ) * v * face.plist[1].z +
-            u * v * face.plist[2].z +
-            u * ( 1.0 - v ) * face.plist[3].z;
+                ( 1.0 - u ) * v * face.plist[1].z +
+                u * v * face.plist[2].z +
+                u * ( 1.0 - v ) * face.plist[3].z;
 
 }
 

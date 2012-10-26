@@ -7,6 +7,8 @@
 
 extern SCENE scene;
 
+// 1 is hit
+// 0 is not hit
 int intersectionTri( SURFACE_3D f, POINT_3D st, POINT_3D ed ){
 
     VEC ray;
@@ -76,7 +78,7 @@ int intersectionTri( SURFACE_3D f, POINT_3D st, POINT_3D ed ){
     vDestroy( qvec );
     vDestroy( ray );
 
-    return t >= 0.0;
+    return ( t >= 0.0 );
 
 }
 
@@ -113,11 +115,23 @@ int raytrace( SURFACE_3D f, POINT_3D st, POINT_3D ed ){
 
 int betweenCheck( SURFACE_3D i, SURFACE_3D j, SURFACE_3D f ){
 
-    if( ( i.normal.vector[0] * f.center.x + i.normal.vector[1] * f.center.y + i.normal.vector[2] * f.center.z ) < 0 ||
-        ( j.normal.vector[0] * f.center.x + j.normal.vector[1] * f.center.y + j.normal.vector[2] * f.center.z ) < 0 )
-        return 0;
+    double id, fd;
 
-    return 1;
+    id = i.normal.vector[0] * i.center.x + i.normal.vector[1] * i.center.y + i.normal.vector[2] * i.center.z;
+    fd = f.normal.vector[0] * f.center.x + f.normal.vector[1] * f.center.y + f.normal.vector[2] * f.center.z;
+
+    // Center point
+    if( ( i.normal.vector[0] * f.center.x + i.normal.vector[1] * f.center.y + i.normal.vector[2] * f.center.z ) - id > 0 &&
+        ( j.normal.vector[0] * f.center.x + j.normal.vector[1] * f.center.y + j.normal.vector[2] * f.center.z ) - fd > 0 )
+            return 1;
+
+    // Terminal point
+    for( int n = 0 ; n < i.n_point ; n++ )
+        if( ( i.normal.vector[0] * f.plist[n].x + i.normal.vector[1] * f.plist[n].y + i.normal.vector[2] * f.plist[n].z ) - id > 0 &&
+            ( j.normal.vector[0] * f.plist[n].x + j.normal.vector[1] * f.plist[n].y + j.normal.vector[2] * f.plist[n].z ) - fd > 0 )
+            return 1;
+
+    return 0;
 
 }
 
@@ -139,9 +153,8 @@ double edUV[16][2] = { { 0.25 + STEP, 0.25 + STEP }, { 0.5 + STEP, 0.75 + STEP }
 void checkOcclusionRayTrace( SURFACE_3D i, SURFACE_3D j, SURFACE_3D face, int flag[] ){
 
     POINT_3D st, ed;
-    int n;
 
-    for( n = 0 ; n < 16 ; n++  ){
+    for( int n = 0 ; n < 16 ; n++  ){
 
         if( flag[n] )
             continue;
@@ -204,57 +217,55 @@ float occlusion( SURFACE_3D i, SURFACE_3D j, int isn, int jsn ){
     cosA = vCos( i.normal, aTob );
     cosB = vCos( j.normal, bToa );
 
-    if( cosA < 0.000001 || cosB < 0.000001 )
-        visibility = 0.0;
-
-    // Pass 2
-    if( visibility > 0.0 ){
-        /*
-        ray = (VEC*) malloc( sizeof( VEC ) * ( i.n_point > j.n_point ? i.n_point : j.n_point ) );
-
-        // the center point of i to the terminal points of j
-        for( int n = 0 ; n < j.n_point ; n++ ){
-            ray[n] = vCreate( 3 );
-            r = lengthPP( i.center, j.plist[n] );
-            ray[n].vector[0] = ( j.plist[n].x - i.center.x ) / r;
-            ray[n].vector[1] = ( j.plist[n].y - i.center.y ) / r;
-            ray[n].vector[2] = ( j.plist[n].z - i.center.z ) / r;
-        }
-        */
-        // Clear flag
-        memset( flag, 0, 16 * sizeof( int ) );
-        for( int n = 0 ; n < scene.n_face ; n++ ){
-
-            searchSceneSurface( scene, n, &im, &ip, &iface );
-
-            if( n == isn || n == jsn )
-                continue;
-
-            if( !betweenCheck( i, j, scene.list[im].plist[ip].flist[iface] ) )
-                continue;
-
-            /*
-            if( checkOcclusion( j.n_point, ray, scene.list[im].plist[ip].flist[iface] ) ){
-                visibility = 0.0;
-                break;
-            }*/
-
-            checkOcclusionRayTrace( i, j, scene.list[im].plist[ip].flist[iface], flag );
-
-        }
-
-        visibility = 0.0;
-        for( int n = 0 ; n < 16 ; n++ )
-            visibility += 0.0625 * !flag[n];
-        /*
-        for( int n = 0 ; n < j.n_point ; n++ )
-            vDestroy( ray[n] );
-        free( ray );
-        */
-    }
-
     vDestroy( aTob );
     vDestroy( bToa );
+
+    if( cosA < 0.000001 || cosB < 0.000001 )
+        return 0.0;
+
+    // Pass 2
+    /*
+    ray = (VEC*) malloc( sizeof( VEC ) * ( i.n_point > j.n_point ? i.n_point : j.n_point ) );
+
+    // the center point of i to the terminal points of j
+    for( int n = 0 ; n < j.n_point ; n++ ){
+        ray[n] = vCreate( 3 );
+        r = lengthPP( i.center, j.plist[n] );
+        ray[n].vector[0] = ( j.plist[n].x - i.center.x ) / r;
+        ray[n].vector[1] = ( j.plist[n].y - i.center.y ) / r;
+        ray[n].vector[2] = ( j.plist[n].z - i.center.z ) / r;
+    }
+    */
+    // Clear flag
+    memset( flag, 0, 16 * sizeof( int ) );
+    for( int n = 0 ; n < scene.n_face ; n++ ){
+
+        searchSceneSurface( scene, n, &im, &ip, &iface );
+
+        if( n == isn || n == jsn )
+            continue;
+
+        if( !betweenCheck( i, j, scene.list[im].plist[ip].flist[iface] ) )
+            continue;
+
+        /*
+        if( checkOcclusion( j.n_point, ray, scene.list[im].plist[ip].flist[iface] ) ){
+            visibility = 0.0;
+            break;
+        }*/
+
+        checkOcclusionRayTrace( i, j, scene.list[im].plist[ip].flist[iface], flag );
+
+    }
+
+    visibility = 0.0;
+    for( int n = 0 ; n < 16 ; n++ )
+        visibility += 0.0625 * !flag[n];
+    /*
+    for( int n = 0 ; n < j.n_point ; n++ )
+        vDestroy( ray[n] );
+    free( ray );
+    */
 
     return visibility;
 

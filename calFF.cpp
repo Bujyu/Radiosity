@@ -10,7 +10,7 @@
 #include "vector.hpp"
 #include "matrix.hpp"
 
-#define SIDE 16
+#define SIDE 8
 #ifndef PI
     #define PI 3.1415926535
 #endif
@@ -26,10 +26,12 @@ double calFF( POINT_3D a, VEC nor_a, POINT_3D b, VEC nor_b ){
     double FF;
     double cosA, cosB;
 
+
     cosA = vCos( nor_a, aTob );
     cosB = vCos( nor_b, bToa );
 
-    FF = ( r < 0.000001 ) ?  0.0 : ( clap( cosA, 0.0, 1.0 ) * clap( cosB, 0.0, 1.0 ) ) / ( PI * r * r );
+    // Special case
+    FF = r <= 0.00001 || cosA < 0 || cosB < 0 ? 0.0 : ( cosA * cosB ) / ( PI * r * r );
 
     vDestroy( aTob );
     vDestroy( bToa );
@@ -42,7 +44,6 @@ double calFF( POINT_3D a, VEC nor_a, POINT_3D b, VEC nor_b ){
 #define HSTEP 0.05
 double calMeshFF( SURFACE_3D i, VEC inormal, SURFACE_3D j, VEC jnormal ){
 
-    //int i, j;
     double diA, diu, div;
     double djA, dju, djv;
 
@@ -88,7 +89,7 @@ double calMeshFF( SURFACE_3D i, VEC inormal, SURFACE_3D j, VEC jnormal ){
 
 double calHemiCubeFF( POINT_3D pt, int n ){
 
-    double r = pt.x * pt.x + ( n == top ? pt.z * pt.z : pt.y * pt.y ) + 1;
+    double r = ( pt.x * pt.x ) + ( n == top ? pt.z * pt.z : pt.y * pt.y ) + 1;
 
     return ( n == top ? 1 : pt.y ) / ( PI * r * r );
 

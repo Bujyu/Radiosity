@@ -12,7 +12,7 @@
 #include "geometric.h"
 
 #define CLIP 3
-#define FF_TYPE 1
+#define FF_TYPE 0
 
 extern void hemiCubeGenrator();
 extern void drawHemiCube();
@@ -34,6 +34,7 @@ int mainwin;
 int viewer;
 
 int colorMode;
+int grid;
 
 //Model
 MODEL sphere;
@@ -103,14 +104,14 @@ void squareCreate( MODEL *target, double x, double y, double z ){
 
     *target = createModel();
 
-    pt[0] = addPoint3D( -2 + x, -4 + y, -2 + z );
-    pt[1] = addPoint3D(  2 + x, -4 + y, -2 + z );
-    pt[2] = addPoint3D(  2 + x,  4 + y, -2 + z );
-    pt[3] = addPoint3D( -2 + x,  4 + y, -2 + z );
-    pt[4] = addPoint3D( -2 + x, -4 + y,  2 + z );
-    pt[5] = addPoint3D(  2 + x, -4 + y,  2 + z );
-    pt[6] = addPoint3D(  2 + x,  4 + y,  2 + z );
-    pt[7] = addPoint3D( -2 + x,  4 + y,  2 + z );
+    pt[0] = addPoint3D( -3 + x, -6 + y, -3 + z );
+    pt[1] = addPoint3D(  3 + x, -6 + y, -3 + z );
+    pt[2] = addPoint3D(  3 + x,  6 + y, -3 + z );
+    pt[3] = addPoint3D( -3 + x,  6 + y, -3 + z );
+    pt[4] = addPoint3D( -3 + x, -6 + y,  3 + z );
+    pt[5] = addPoint3D(  3 + x, -6 + y,  3 + z );
+    pt[6] = addPoint3D(  3 + x,  6 + y,  3 + z );
+    pt[7] = addPoint3D( -3 + x,  6 + y,  3 + z );
 
     // 3 2 1 0
     patch = createPatch();
@@ -165,10 +166,10 @@ void lightCreate(){
     lightSource = createModel();
 
 
-    pt[0] = addPoint3D( 2, 9, -2 );
-    pt[1] = addPoint3D( -2, 9, -2 );
-    pt[2] = addPoint3D( 2, 9, 2 );
-    pt[3] = addPoint3D( -2, 9, 2 );
+    pt[0] = addPoint3D( 2.5, 9, -2.5 );
+    pt[1] = addPoint3D( -2.5, 9, -2.5 );
+    pt[2] = addPoint3D( 2.5, 9, 2.5 );
+    pt[3] = addPoint3D( -2.5, 9, 2.5 );
 
     // Light Source
     patch = createPatch();
@@ -252,29 +253,6 @@ void wallCreate(){
 }
 
 /*
-void drawMesh(){
-
-    Mesh::ConstFaceIter         f_it( _mesh.faces_begin() ),
-                                f_end( _mesh.faces_end() );
-    Mesh::ConstFaceVertexIter   fv_it;
-
-    glColor3f( 1.0, 1.0, 1.0 );
-    //glBegin( GL_TRIANGLES );
-    for( ; f_it != f_end ; ++f_it ){
-        glBegin( GL_LINE_LOOP );
-        fv_it = _mesh.cfv_iter( f_it.handle() );
-        GL::glVertex( _mesh.point( fv_it ) );
-        ++fv_it;
-        GL::glVertex( _mesh.point( fv_it ) );
-        ++fv_it;
-        GL::glVertex( _mesh.point( fv_it ) );
-        glEnd();
-    }
-    //glEnd();
-    //glFlush();
-
-}
-
 void display( void ){
 
     glClear( GL_COLOR_BUFFER_BIT );
@@ -299,11 +277,15 @@ void keyboard( unsigned char key, int x, int y ){
         case 'm':
             colorMode ^= 1;
             break;
+        case 'G':
+        case 'g':
+            grid ^= 1;
+            break;
         default:
             break;
     }
 
-    //glClear( GL_COLOR_BUFFER_BIT );
+    glClear( GL_COLOR_BUFFER_BIT );
     glutPostRedisplay();
 
 }
@@ -374,6 +356,7 @@ void init(){
 
     // Initial Var
     colorMode = 0;  // Diffuse
+    grid = 0;
 
     int im, ip, iface;
     int jm, jp, jface;
@@ -384,30 +367,34 @@ void init(){
     //float center[3], radius = 0.0;
 
     //Model Create
-    sphereCreate( 4, -6, 0 );
-    setReflection( &sphere, 0.54, 0.54, 0.54 );
+    //sphereCreate( 4, -6, 0 );
+    //setReflection( &sphere, 0.54, 0.54, 0.54 );
 
-    squareCreate( &square[0], -4, -6, 0 );
+    squareCreate( &square[0], -5, -4, 4 );
     setReflection( &square[0], 0.54, 0.54, 0.54 );
 
-    squareCreate( &square[1], 4, -6, 0 );
+    squareCreate( &square[1], 5, -4, 0 );
     setReflection( &square[1], 0.54, 0.54, 0.54 );
 
     wallCreate();
     setReflection( &wall[0], 0.84, 0.84, 0.84 );
     setReflection( &wall[1], 1.0, 0.0, 0.0 );
     setReflection( &wall[2], 0.0, 0.0, 1.0 );
-    setReflection( &wall[3], 0.54, 0.54, 0.54 );
-    setReflection( &wall[4], 0.84, 0.84, 0.84 );
-    //setReflection( &wall[5], 0.84, 0.84, 0.84 );
+    setReflection( &wall[3], 0.84, 0.84, 0.84 );
+    setReflection( &wall[4], 0.54, 0.54, 0.54 );
+    setReflection( &wall[5], 0.84, 0.84, 0.84 );
 
     lightCreate();
     setReflection( &lightSource, 0.8, 0.8, 0.8 );
     setEmission( &lightSource, 1.27, 1.27, 1.27 );
 
+    //setReflection( &wall[5], 0.8, 0.8, 0.8 );
+    //setEmission( &wall[5], 1.27, 1.27, 1.27 );
+
     for( int i = 0 ; i < CLIP - 2 ; i++ ){
         clipPatch( &square[0] );
         clipPatch( &square[1] );
+
     }
 
     for( int i = 0 ; i < CLIP ; i++ ){
@@ -416,9 +403,10 @@ void init(){
         clipPatch( &wall[2] );
         clipPatch( &wall[3] );
         clipPatch( &wall[4] );
-        //clipPatch( &wall[5] );
+        clipPatch( &wall[5] );
         clipPatch( &lightSource );
     }
+
 
     scene = createScene();
     // Light
@@ -434,7 +422,7 @@ void init(){
     addScene( &scene, wall[2] );
     addScene( &scene, wall[3] );
     addScene( &scene, wall[4] );
-    //addScene( &scene, wall[5] );
+    addScene( &scene, wall[5] );
 /*
     // refine clip
     for( int i = 0 ; i < scene.n_face ; i++ ){
@@ -483,12 +471,14 @@ void init(){
     printf( "M:%d P:%d S:%d\n", scene.n_model, scene.n_patch, scene.n_face );
 
     // Hemi-Cube Generate
-    printf("Start Hemi-Cube Generate\n");
-    QueryPerformanceCounter(&t1);
-    hemiCubeGenrator();
-    QueryPerformanceCounter(&t2);
-    printf("Complete Hemi-Cube Generate\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
-    //test();
+    if( FF_TYPE ){
+        printf("Start Hemi-Cube Generate\n");
+        QueryPerformanceCounter(&t1);
+        hemiCubeGenrator();
+        QueryPerformanceCounter(&t2);
+        printf("Complete Hemi-Cube Generate\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
+        //test();
+    }
 
     // Visible matrix generate & check
     visible = mCreate( scene.n_face, scene.n_face, EMPTY );
@@ -496,11 +486,11 @@ void init(){
     printf("Start occlusion checking\n");
     QueryPerformanceCounter(&t1);
     for( int i = 0 ; i < scene.n_face ; i++ ){
-        searchSceneSurface( scene, i, &im, &ip, &iface );
         for( int j = i ; j < scene.n_face ; j++ ){
             if( i == j )
                 visible.matrix[i][j] = 0.0;
             else{
+                searchSceneSurface( scene, i, &im, &ip, &iface );
                 searchSceneSurface( scene, j, &jm, &jp, &jface );
                 visible.matrix[i][j] = occlusion( scene.list[im].plist[ip].flist[iface], scene.list[jm].plist[jp].flist[jface], i, j );
                 visible.matrix[j][i] = visible.matrix[i][j];
@@ -556,7 +546,14 @@ void init(){
     QueryPerformanceCounter(&t2);
     printf("Complete FF calculation\t\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
 
-    //mPrint( FF );
+    /*double sum;
+    for( int i = 0 ; i < FF.row ; i++ ){
+        sum = 0.0;
+        searchSceneSurface( scene, i, &im, &ip, &iface );
+        for( int j = 0 ; j < FF.col ; j++ )
+            sum += FF.matrix[i][j];
+        printf("%d %lf\n", i, sum );
+    }*/
 
     printf("Start matrix solution\n");
     QueryPerformanceCounter(&t1);
@@ -583,7 +580,6 @@ void display(){}
 
 void content( void ){
 
-    int mc, pc, fc;
     int fm, fp, f;
     GLfloat color[3];
 
@@ -592,32 +588,31 @@ void content( void ){
     axis();
 
     //drawHemiCube();
-/*
-    for( int i = 0 ; i < scene.n_patch ; i++ )
-        drawPatch( scene.list[i], i < 1 ? 1 : 3 );
-*/
-
-    //for( int i = 1 * scene.list[0].n_face ; i < scene.n_face ; i++ ){
+    glPushAttrib( GL_ALL_ATTRIB_BITS );
     for( int i = 0 ; i < scene.n_face ; i++ ){
 
         searchSceneSurface( scene, i, &fm, &fp, &f );
 
-        color[0] = colorMode ? scene.list[fm].reflection[0] : clap( b[0].vector[i], 0.0, 1.0 );
-        color[1] = colorMode ? scene.list[fm].reflection[1] : clap( b[1].vector[i], 0.0, 1.0 );
-        color[2] = colorMode ? scene.list[fm].reflection[2] : clap( b[2].vector[i], 0.0, 1.0 );
+        if( fm == 8 )
+            continue;
+
+        color[0] = colorMode ? scene.list[fm].reflection[0] : b[0].vector[i];
+        color[1] = colorMode ? scene.list[fm].reflection[1] : b[1].vector[i];
+        color[2] = colorMode ? scene.list[fm].reflection[2] : b[2].vector[i];
 
         glColor3f( color[0], color[1], color[2] );
-        searchSceneSurface( scene, i, &mc, &pc, &fc );
-        glPolygonMode( GL_BACK, GL_LINE );
+
+        grid ? glPolygonMode( GL_FRONT_AND_BACK, GL_LINE ) : glPolygonMode( GL_BACK, GL_LINE );
         glBegin( GL_POLYGON );
-        for( int k = 0 ; k < scene.list[mc].plist[pc].flist[fc].n_point ; k++ ){
-            glVertex3f( scene.list[mc].plist[pc].flist[fc].plist[k].x,
-                        scene.list[mc].plist[pc].flist[fc].plist[k].y,
-                        scene.list[mc].plist[pc].flist[fc].plist[k].z  );
+        for( int k = 0 ; k < scene.list[fm].plist[fp].flist[f].n_point ; k++ ){
+            glVertex3f( scene.list[fm].plist[fp].flist[f].plist[k].x,
+                        scene.list[fm].plist[fp].flist[f].plist[k].y,
+                        scene.list[fm].plist[fp].flist[f].plist[k].z  );
         }
         glEnd();
 
     }
+    glPopAttrib();
 
 	glutSwapBuffers();
 

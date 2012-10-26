@@ -19,11 +19,9 @@ int converge( VEC b, VEC e, VEC reflection, MAT FF, double boundary ){
         rv.vector[i] = r;
     }
 
-    for( i = 0 ; i < rv.elements ; i++ ){
-        if( fabs( rv.vector[i] - e.vector[i] ) > boundary ){
+    for( i = 0 ; i < rv.elements && !flag ; i++ ){
+        if( fabs( rv.vector[i] - e.vector[i] ) > boundary )
             flag = 1;
-            break;
-        }
     }
 
     vDestroy( rv );
@@ -42,7 +40,7 @@ VEC matrix_solution( VEC emission, VEC reflection, MAT FF ){
     do{
 
         for( i = 0 ; i < emission.elements ; i++ ){
-            r = 0;
+            r = 0.0;
             for( j = 0 ; j < emission.elements ; j++ ){
                 if( i != j )
                     r += FF.matrix[i][j] * x.vector[j];

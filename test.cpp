@@ -51,6 +51,17 @@ VEC e[3];
 VEC p[3];
 VEC b[3];
 
+void progressBar( int total, int now, int barLength ){
+
+    double percentComplete = (double) now / total;
+
+    printf("\r[");
+    for( int i = 0 ; i < barLength ; i++ )
+        printf("%c", percentComplete * barLength >= i   ? '|' : ' ' );
+    printf("] %3.0lf%%",  (double) ( now + 1 ) / total * 100 );
+
+}
+
 void sphereCreate( double x, double y, double z ){
 
     PATCH patch;
@@ -370,10 +381,10 @@ void init(){
     //sphereCreate( 4, -6, 0 );
     //setReflection( &sphere, 0.54, 0.54, 0.54 );
 
-    squareCreate( &square[0], -5, -4, 4 );
+    squareCreate( &square[0], -5.5, -4, 3 );
     setReflection( &square[0], 0.54, 0.54, 0.54 );
 
-    squareCreate( &square[1], 5, -4, 0 );
+    squareCreate( &square[1], 5.5, -4, 0 );
     setReflection( &square[1], 0.54, 0.54, 0.54 );
 
     wallCreate();
@@ -406,7 +417,6 @@ void init(){
         clipPatch( &wall[5] );
         clipPatch( &lightSource );
     }
-
 
     scene = createScene();
     // Light
@@ -486,6 +496,7 @@ void init(){
     printf("Start occlusion checking\n");
     QueryPerformanceCounter(&t1);
     for( int i = 0 ; i < scene.n_face ; i++ ){
+        progressBar( scene.n_face, i, 25 );
         for( int j = i ; j < scene.n_face ; j++ ){
             if( i == j )
                 visible.matrix[i][j] = 0.0;
@@ -498,7 +509,7 @@ void init(){
         }
     }
     QueryPerformanceCounter(&t2);
-    printf("Complete occlusion checking\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
+    printf("\nComplete occlusion checking\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
 
     //mPrint( visible );
 
@@ -529,6 +540,7 @@ void init(){
     printf("Start FF calculation\n");
     QueryPerformanceCounter(&t1);
     for( int i = 0 ; i < scene.n_face ; i++ ){
+        progressBar( scene.n_face, i, 25 );
         searchSceneSurface( scene, i, &im, &ip, &iface );
         for( int j = i ; j < scene.n_face ; j++ ){
             if( i == j )
@@ -544,7 +556,7 @@ void init(){
         }
     }
     QueryPerformanceCounter(&t2);
-    printf("Complete FF calculation\t\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
+    printf("\nComplete FF calculation\t\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
 
     /*double sum;
     for( int i = 0 ; i < FF.row ; i++ ){

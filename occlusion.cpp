@@ -121,14 +121,14 @@ int betweenCheck( SURFACE_3D i, SURFACE_3D j, SURFACE_3D f ){
     fd = f.normal.vector[0] * f.center.x + f.normal.vector[1] * f.center.y + f.normal.vector[2] * f.center.z;
 
     // Center point
-    if( ( i.normal.vector[0] * f.center.x + i.normal.vector[1] * f.center.y + i.normal.vector[2] * f.center.z ) - id > 0 &&
-        ( j.normal.vector[0] * f.center.x + j.normal.vector[1] * f.center.y + j.normal.vector[2] * f.center.z ) - fd > 0 )
+    if( ( i.normal.vector[0] * f.center.x + i.normal.vector[1] * f.center.y + i.normal.vector[2] * f.center.z ) - id <= 0 ||
+        ( j.normal.vector[0] * f.center.x + j.normal.vector[1] * f.center.y + j.normal.vector[2] * f.center.z ) - fd <= 0 )
             return 1;
 
     // Terminal point
     for( int n = 0 ; n < i.n_point ; n++ )
-        if( ( i.normal.vector[0] * f.plist[n].x + i.normal.vector[1] * f.plist[n].y + i.normal.vector[2] * f.plist[n].z ) - id > 0 &&
-            ( j.normal.vector[0] * f.plist[n].x + j.normal.vector[1] * f.plist[n].y + j.normal.vector[2] * f.plist[n].z ) - fd > 0 )
+        if( ( i.normal.vector[0] * f.plist[n].x + i.normal.vector[1] * f.plist[n].y + i.normal.vector[2] * f.plist[n].z ) - id <= 0 ||
+            ( j.normal.vector[0] * f.plist[n].x + j.normal.vector[1] * f.plist[n].y + j.normal.vector[2] * f.plist[n].z ) - fd <= 0 )
             return 1;
 
     return 0;

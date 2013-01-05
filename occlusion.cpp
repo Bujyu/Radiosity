@@ -172,7 +172,7 @@ int checkOcclusion( int n, VEC *ray, SURFACE_3D face ){
 
     VEC *fnormal = (VEC*) malloc( sizeof( VEC ) * n );
     double d;
-    int flag = 0;
+    int flag = 1;
 
     for( int i = 0 ; i < n ; i++ )
         fnormal[i] = vCross( ray[(i+1)%n], ray[i] );
@@ -236,7 +236,8 @@ float occlusion( SURFACE_3D i, SURFACE_3D j, int isn, int jsn ){
         ray[n].vector[2] = ( j.plist[n].z - i.center.z ) / r;
     }
     */
-    // Clear flag
+
+    // Clear flag/*
     memset( flag, 0, 16 * sizeof( int ) );
     for( int n = 0 ; n < scene.n_face ; n++ ){
 
@@ -252,7 +253,8 @@ float occlusion( SURFACE_3D i, SURFACE_3D j, int isn, int jsn ){
         if( checkOcclusion( j.n_point, ray, scene.list[im].plist[ip].flist[iface] ) ){
             visibility = 0.0;
             break;
-        }*/
+        }
+        */
 
         checkOcclusionRayTrace( i, j, scene.list[im].plist[ip].flist[iface], flag );
 

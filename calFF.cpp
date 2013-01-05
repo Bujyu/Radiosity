@@ -31,7 +31,7 @@ double calFF( POINT_3D a, VEC nor_a, POINT_3D b, VEC nor_b ){
     cosB = vCos( nor_b, bToa );
 
     // Special case
-    FF = r <= 0.00001 || cosA < 0 || cosB < 0 ? 0.0 : ( cosA * cosB ) / ( PI * r * r );
+    FF = ( r <= 0.00001 || cosA < 0 || cosB < 0 ) ? 0.0 : ( cosA * cosB ) / ( PI * r * r );
 
     vDestroy( aTob );
     vDestroy( bToa );

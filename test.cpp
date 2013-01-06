@@ -11,7 +11,7 @@
 
 #include "geometric.h"
 
-#define CLIP 3
+#define CLIP 5
 #define FF_TYPE 1
 #define OCCULSION_CHK 1
 
@@ -185,10 +185,10 @@ void lightCreate(){
     lightSource = createModel();
 
 
-    pt[0] = addPoint3D( 2.5, 9, -2.5 );
-    pt[1] = addPoint3D( -2.5, 9, -2.5 );
-    pt[2] = addPoint3D( 2.5, 9, 2.5 );
-    pt[3] = addPoint3D( -2.5, 9, 2.5 );
+    pt[0] = addPoint3D( 5, 9, -5 );
+    pt[1] = addPoint3D( -5, 9, -5 );
+    pt[2] = addPoint3D( 5, 9, 5 );
+    pt[3] = addPoint3D( -5, 9, 5 );
 
     // Light Source
     patch = createPatch();
@@ -386,9 +386,8 @@ void init(){
     //float center[3], radius = 0.0;
 
     //Model Create
-    //sphereCreate( 4, -6, 0 );
-    //setReflection( &sphere, 0.54, 0.54, 0.54 );
-
+    sphereCreate( 4, -6, 0 );
+    setReflection( &sphere, 0.54, 0.54, 0.54 );
 
     double squ0_size[3] = { 7, 7, 7 };
     double squ0_pos[3] = { -5, ( squ0_size[1] / 2 ) - 10, 5 };
@@ -408,13 +407,11 @@ void init(){
     setReflection( &wall[4], 0.54, 0.54, 0.54 );
     setReflection( &wall[5], 0.84, 0.84, 0.84 );
 
-    //lightCreate();
-    //setReflection( &lightSource, 0.8, 0.8, 0.8 );
-    //setEmission( &lightSource, 1.27, 1.27, 1.27 );
+    lightCreate();
+    setReflection( &lightSource, 0.8, 0.8, 0.8 );
+    setEmission( &lightSource, 1.27, 1.27, 1.27 );
 
-    setReflection( &wall[4], 0.8, 0.8, 0.8 );
-    setEmission( &wall[4], 1.27, 1.27, 1.27 );
-
+/*
     for( int i = 0 ; i < CLIP ; i++ ){
         clipPatch( &square[0] );
         clipPatch( &square[1] );
@@ -426,10 +423,10 @@ void init(){
         clipPatch( &wall[5] );
         //clipPatch( &lightSource );
     }
-
+*/
     scene = createScene();
     // Light
-    //addScene( &scene, lightSource );
+    addScene( &scene, lightSource );
 
     // Model
     //addScene( &scene, sphere );
@@ -442,13 +439,13 @@ void init(){
     addScene( &scene, wall[3] );
     addScene( &scene, wall[4] );
     addScene( &scene, wall[5] );
-/*
+
     // refine clip
     for( int i = 0 ; i < scene.n_face ; i++ ){
         for( int j = i + 1 ; j < scene.n_face ; j++ ){
             searchSceneSurface( scene, i, &im, &ip, &iface );
             searchSceneSurface( scene, j, &jm, &jp, &jface );
-            refineClip( &scene.list[im].plist[ip].flist[iface], &scene.list[jm].plist[jp].flist[jface], 6, 0.3 );
+            refineClip( &scene.list[im].plist[ip].flist[iface], &scene.list[jm].plist[jp].flist[jface], 0.5, 0.3 );
         }
     }
 
@@ -486,7 +483,7 @@ void init(){
         }
         scene.n_face += scene.list[i].n_face;
     }
-*/
+
     printf( "M:%d P:%d S:%d\n", scene.n_model, scene.n_patch, scene.n_face );
 
     // Hemi-Cube Generate
@@ -567,14 +564,14 @@ void init(){
     QueryPerformanceCounter(&t2);
     printf("\nComplete FF calculation\t\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
 
-    double sum;
+    /*double sum;
     for( int i = 0 ; i < FF.row ; i++ ){
         sum = 0.0;
         searchSceneSurface( scene, i, &im, &ip, &iface );
         for( int j = 0 ; j < FF.col ; j++ )
             sum += FF.matrix[i][j];
         printf("row %d %lf\n", i, sum );
-    }
+    }*/
 
     printf("Start matrix solution\n");
     QueryPerformanceCounter(&t1);

@@ -142,7 +142,7 @@ void hemiCubeGenrator(){
             d = addPoint3D( (double)         i * dx, (double)         j * dy, 1.0 );
 
             face = addSurface3D( 4, a, b, c, d );
-            face.FF = calHemiCubeFF( face.center, top ) * dA;
+            face.FF = calHemiCubeFF( face.center, back ) * dA;
 
             addPatch( &patch[back], face );
 
@@ -153,7 +153,7 @@ void hemiCubeGenrator(){
             d = addPoint3D( (double) ( i + 1 ) * dx, (double)         j * dy, -1.0 );
 
             face = addSurface3D( 4, a, b, c, d );
-            face.FF = calHemiCubeFF( face.center, top ) * dA;
+            face.FF = calHemiCubeFF( face.center, front ) * dA;
 
             addPatch( &patch[front], face );
 
@@ -170,7 +170,7 @@ void hemiCubeGenrator(){
             d = addPoint3D( 1.0, (double)         i * dy, (double)         j * dz );
 
             face = addSurface3D( 4, a, b, c, d );
-            face.FF = calHemiCubeFF( face.center, top ) * dA;
+            face.FF = calHemiCubeFF( face.center, right ) * dA;
 
             addPatch( &patch[right], face );
 
@@ -181,7 +181,7 @@ void hemiCubeGenrator(){
             d = addPoint3D( -1.0, (double) ( i + 1 ) * dy, (double)         j * dz );
 
             face = addSurface3D( 4, a, b, c, d );
-            face.FF = calHemiCubeFF( face.center, top ) * dA;
+            face.FF = calHemiCubeFF( face.center, left ) * dA;
 
             addPatch( &patch[left], face );
 

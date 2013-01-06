@@ -115,20 +115,20 @@ int raytrace( SURFACE_3D f, POINT_3D st, POINT_3D ed ){
 
 int betweenCheck( SURFACE_3D i, SURFACE_3D j, SURFACE_3D f ){
 
-    double id, fd;
+    double id, jd;
 
     id = i.normal.vector[0] * i.center.x + i.normal.vector[1] * i.center.y + i.normal.vector[2] * i.center.z;
-    fd = f.normal.vector[0] * f.center.x + f.normal.vector[1] * f.center.y + f.normal.vector[2] * f.center.z;
+    jd = j.normal.vector[0] * j.center.x + j.normal.vector[1] * j.center.y + j.normal.vector[2] * j.center.z;
 
     // Center point
-    if( ( i.normal.vector[0] * f.center.x + i.normal.vector[1] * f.center.y + i.normal.vector[2] * f.center.z ) - id <= 0 ||
-        ( j.normal.vector[0] * f.center.x + j.normal.vector[1] * f.center.y + j.normal.vector[2] * f.center.z ) - fd <= 0 )
+    if( ( i.normal.vector[0] * f.center.x + i.normal.vector[1] * f.center.y + i.normal.vector[2] * f.center.z ) + id > 0 &&
+        ( j.normal.vector[0] * f.center.x + j.normal.vector[1] * f.center.y + j.normal.vector[2] * f.center.z ) + jd > 0 )
             return 1;
 
     // Terminal point
     for( int n = 0 ; n < i.n_point ; n++ )
-        if( ( i.normal.vector[0] * f.plist[n].x + i.normal.vector[1] * f.plist[n].y + i.normal.vector[2] * f.plist[n].z ) - id <= 0 ||
-            ( j.normal.vector[0] * f.plist[n].x + j.normal.vector[1] * f.plist[n].y + j.normal.vector[2] * f.plist[n].z ) - fd <= 0 )
+        if( ( i.normal.vector[0] * f.plist[n].x + i.normal.vector[1] * f.plist[n].y + i.normal.vector[2] * f.plist[n].z ) + id > 0 &&
+            ( j.normal.vector[0] * f.plist[n].x + j.normal.vector[1] * f.plist[n].y + j.normal.vector[2] * f.plist[n].z ) + jd > 0 )
             return 1;
 
     return 0;
@@ -220,7 +220,7 @@ float occlusion( SURFACE_3D i, SURFACE_3D j, int isn, int jsn ){
     vDestroy( aTob );
     vDestroy( bToa );
 
-    if( cosA < 0.000001 || cosB < 0.000001 )
+    if( cosA <= 0.0 || cosB <= 0.0 )
         return 0.0;
 
     // Pass 2
@@ -236,7 +236,6 @@ float occlusion( SURFACE_3D i, SURFACE_3D j, int isn, int jsn ){
         ray[n].vector[2] = ( j.plist[n].z - i.center.z ) / r;
     }
     */
-
     // Clear flag/*
     memset( flag, 0, 16 * sizeof( int ) );
     for( int n = 0 ; n < scene.n_face ; n++ ){
@@ -249,12 +248,11 @@ float occlusion( SURFACE_3D i, SURFACE_3D j, int isn, int jsn ){
         if( !betweenCheck( i, j, scene.list[im].plist[ip].flist[iface] ) )
             continue;
 
-        /*
-        if( checkOcclusion( j.n_point, ray, scene.list[im].plist[ip].flist[iface] ) ){
+
+        /*if( checkOcclusion( j.n_point, ray, scene.list[im].plist[ip].flist[iface] ) ){
             visibility = 0.0;
             break;
-        }
-        */
+        }*/
 
         checkOcclusionRayTrace( i, j, scene.list[im].plist[ip].flist[iface], flag );
 

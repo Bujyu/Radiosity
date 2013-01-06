@@ -11,7 +11,7 @@
 
 #include "geometric.h"
 
-#define CLIP 5
+#define CLIP 2
 #define FF_TYPE 1
 #define OCCULSION_CHK 1
 
@@ -26,8 +26,6 @@ extern double calMeshFF( SURFACE_3D i, VEC inormal, SURFACE_3D j, VEC jnormal );
 
 extern VEC matrix_solution( VEC emission, VEC reflection, MAT FF );
 
-//Mesh mesh;
-//Mesh mesh2;
 int gw, gh;
 
 //Main Func
@@ -35,6 +33,7 @@ int mainwin;
 int viewer;
 
 int colorMode;
+int gouraudShader;
 int grid;
 
 //Model
@@ -44,6 +43,9 @@ MODEL wall[6];
 MODEL lightSource;
 
 SCENE scene;
+
+
+std::vector<POINT_3D> *pcollect;
 
 // Matrix
 MAT FF;
@@ -300,6 +302,10 @@ void keyboard( unsigned char key, int x, int y ){
         case 'g':
             grid ^= 1;
             break;
+        case 'S':
+        case 's':
+            gouraudShader ^= 1;
+            break;
         default:
             break;
     }
@@ -375,6 +381,7 @@ void init(){
 
     // Initial Var
     colorMode = 0;  // Diffuse
+    gouraudShader = 0;  //No interpolation
     grid = 0;
 
     int im, ip, iface;
@@ -411,19 +418,21 @@ void init(){
     setReflection( &lightSource, 0.8, 0.8, 0.8 );
     setEmission( &lightSource, 1.27, 1.27, 1.27 );
 
-/*
+
     for( int i = 0 ; i < CLIP ; i++ ){
-        clipPatch( &square[0] );
-        clipPatch( &square[1] );
         clipPatch( &wall[0] );
         clipPatch( &wall[1] );
         clipPatch( &wall[2] );
         clipPatch( &wall[3] );
         clipPatch( &wall[4] );
         clipPatch( &wall[5] );
-        //clipPatch( &lightSource );
     }
-*/
+    for( int i = 0 ; i < CLIP-1 ; i++ ){
+        clipPatch( &square[0] );
+        clipPatch( &square[1] );
+        clipPatch( &lightSource );
+    }
+
     scene = createScene();
     // Light
     addScene( &scene, lightSource );
@@ -439,7 +448,7 @@ void init(){
     addScene( &scene, wall[3] );
     addScene( &scene, wall[4] );
     addScene( &scene, wall[5] );
-
+/*
     // refine clip
     for( int i = 0 ; i < scene.n_face ; i++ ){
         for( int j = i + 1 ; j < scene.n_face ; j++ ){
@@ -483,7 +492,7 @@ void init(){
         }
         scene.n_face += scene.list[i].n_face;
     }
-
+*/
     printf( "M:%d P:%d S:%d\n", scene.n_model, scene.n_patch, scene.n_face );
 
     // Hemi-Cube Generate
@@ -564,21 +573,63 @@ void init(){
     QueryPerformanceCounter(&t2);
     printf("\nComplete FF calculation\t\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
 
-    /*double sum;
-    for( int i = 0 ; i < FF.row ; i++ ){
-        sum = 0.0;
-        searchSceneSurface( scene, i, &im, &ip, &iface );
-        for( int j = 0 ; j < FF.col ; j++ )
-            sum += FF.matrix[i][j];
-        printf("row %d %lf\n", i, sum );
-    }*/
-
     printf("Start matrix solution\n");
     QueryPerformanceCounter(&t1);
     for( int i = 0 ; i < 3 ; i++ )
         b[i] = matrix_solution( e[i], p[i], FF );
     QueryPerformanceCounter(&t2);
     printf("Complete matrix solution\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
+
+    // Gouraud Shader prepared
+    pcollect = new std::vector<POINT_3D>[scene.n_patch];
+
+    // Collect Point
+    int flag = 0;
+    for( int i = 0 ; i < scene.n_face; i++ ){
+        searchSceneSurface( scene, i, &im, &ip, &iface);
+        for( int j = 0 ; j < scene.list[im].plist[ip].flist[iface].n_point ; j++ ){
+            for( int k = 0 ; k < (int) pcollect[ip].size() ; k++ ){
+                if( PTEQU( pcollect[ip][k], scene.list[im].plist[ip].flist[iface].plist[j] ) )
+                    flag = 1;
+            }
+            if( !flag )
+                pcollect[ip].push_back( scene.list[im].plist[ip].flist[iface].plist[j] );
+            flag = 0;
+        }
+    }
+
+    // Update point rad
+    for( int i = 0 ; i < scene.n_face; i++ ){
+        searchSceneSurface( scene, i, &im, &ip, &iface);
+        for( int j = 0 ; j < scene.list[im].plist[ip].flist[iface].n_point ; j++ ){
+            for( int k = 0 ; k < (int) pcollect[ip].size() ; k++ ){
+                if( PTEQU( pcollect[ip][k], scene.list[im].plist[ip].flist[iface].plist[j] ) ){
+                    pcollect[ip][k].rad[0] += b[0].vector[i];
+                    pcollect[ip][k].rad[1] += b[1].vector[i];
+                    pcollect[ip][k].rad[2] += b[2].vector[i];
+                    pcollect[ip][k].count++;
+                    break;
+                }
+            }
+        }
+    }
+
+    // average point rad
+    for( int i = 0 ; i < scene.n_patch ; i++ ){
+        for( int j = 0 ; j < (int) pcollect[i].size() ; j++ ){
+            pcollect[i][j].rad[0] /= pcollect[i][j].count;
+            pcollect[i][j].rad[1] /= pcollect[i][j].count;
+            pcollect[i][j].rad[2] /= pcollect[i][j].count;
+        }
+    }
+
+    /*for( int i = 0 ; i < scene.n_model ; i++ ){
+        printf( "Models %d - %d points\n", i, pcollect[i].size() );
+        for( int j = 0 ; j < (int) pcollect[i].size() ; j++ )
+            printf( "\t%lf %lf %lf [ %lf %lf %lf ] %d\n", pcollect[i][j].x, pcollect[i][j].y, pcollect[i][j].z,
+                                                  pcollect[i][j].rad[0], pcollect[i][j].rad[1], pcollect[i][j].rad[2],
+                                                  pcollect[i][j].count );
+    }*/
 
     glEnable( GL_DEPTH_TEST );
 
@@ -611,15 +662,25 @@ void content( void ){
 
         searchSceneSurface( scene, i, &fm, &fp, &f );
 
-        color[0] = colorMode ? scene.list[fm].reflection[0] : b[0].vector[i];
-        color[1] = colorMode ? scene.list[fm].reflection[1] : b[1].vector[i];
-        color[2] = colorMode ? scene.list[fm].reflection[2] : b[2].vector[i];
+        if( fm == 8 )
+            continue;
 
-        glColor3f( color[0], color[1], color[2] );
+        color[0] = colorMode ? scene.list[fm].reflection[0] : b[0].vector[i] * 3;
+        color[1] = colorMode ? scene.list[fm].reflection[1] : b[1].vector[i] * 3;
+        color[2] = colorMode ? scene.list[fm].reflection[2] : b[2].vector[i] * 3;
+
+        if( !gouraudShader )
+            glColor3f( clap( color[0], 0.0, 1.0 ), clap( color[1], 0.0, 1.0 ), clap( color[2], 0.0, 1.0 ) );
 
         grid ? glPolygonMode( GL_FRONT_AND_BACK, GL_LINE ) : glPolygonMode( GL_BACK, GL_LINE );
         glBegin( GL_POLYGON );
         for( int k = 0 ; k < scene.list[fm].plist[fp].flist[f].n_point ; k++ ){
+            for( int n = 0 ; n < (int) pcollect[fp].size() && gouraudShader ; n++ ){
+                if( PTEQU( scene.list[fm].plist[fp].flist[f].plist[k], pcollect[fp][n] ) ){
+                    glColor3f( clap( pcollect[fp][n].rad[0] * 3, 0.0, 1.0 ), clap( pcollect[fp][n].rad[1] * 3, 0.0, 1.0 ), clap( pcollect[fp][n].rad[2] * 3, 0.0, 1.0 ) );
+                    break;
+                }
+            }
             glVertex3f( scene.list[fm].plist[fp].flist[f].plist[k].x,
                         scene.list[fm].plist[fp].flist[f].plist[k].y,
                         scene.list[fm].plist[fp].flist[f].plist[k].z  );

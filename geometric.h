@@ -6,6 +6,8 @@
 #include <vector>
 #include "vector.hpp"
 
+#define PTEQU( a, b ) ( a.x == b.x && a.y == b.y && a.z == b.z )
+
 // Data type definition
 // 2-Dimension
 // Point
@@ -31,6 +33,10 @@ typedef struct{
     double x;
     double y;
     double z;
+
+    //Color
+    double rad[3];
+    int count;
 
 } POINT_3D;
 

@@ -15,6 +15,12 @@ POINT_3D addPoint3D( double x, double y, double z ){
     pt.y = y;
     pt.z = z;
 
+    // Vertex rad
+    pt.rad[0] = 0.0;
+    pt.rad[1] = 0.0;
+    pt.rad[2] = 0.0;
+    pt.count = 0;
+
     return pt;
 
 }

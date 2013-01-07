@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstdio>
 #include <cmath>
+#include <ctime>
 
 #include "geometric.h"
 #include "vector.hpp"
@@ -236,10 +237,13 @@ void normalRot( VEC fnormal, int n, VEC ray[] ){
     VEC fn = vClone( fnormal );
     MAT m = mCreate( 4, 4, IDENTITY );
 
+    srand( time( NULL ) );
+
     normal.vector[1] = 1.0;
     m = rotate3D( m, axisRot( fn, normal, 0 ), 1, 0, 0 );
     fn = transform( fn, m );
     m = rotate3D( m, axisRot( fn, normal, 2 ), 0, 0, 1 );
+    m = rotate3D( m, 45 * ( ( ( rand() % 201 ) / 200.0 ) - 1 ), 0, 1, 0 );
 
     for( int i = 0 ; i < n ; i++ )
         ray[i] = transform( ray[i], m );

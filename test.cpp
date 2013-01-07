@@ -12,7 +12,7 @@
 #include "geometric.h"
 
 #define CLIP 2
-#define FF_TYPE 1
+#define FF_TYPE 0
 #define OCCULSION_CHK 1
 
 extern void hemiCubeGenrator();
@@ -417,8 +417,7 @@ void init(){
     lightCreate();
     setReflection( &lightSource, 0.8, 0.8, 0.8 );
     setEmission( &lightSource, 1.27, 1.27, 1.27 );
-
-
+/*
     for( int i = 0 ; i < CLIP ; i++ ){
         clipPatch( &wall[0] );
         clipPatch( &wall[1] );
@@ -432,7 +431,7 @@ void init(){
         clipPatch( &square[1] );
         clipPatch( &lightSource );
     }
-
+*/
     scene = createScene();
     // Light
     addScene( &scene, lightSource );
@@ -448,13 +447,13 @@ void init(){
     addScene( &scene, wall[3] );
     addScene( &scene, wall[4] );
     addScene( &scene, wall[5] );
-/*
+
     // refine clip
     for( int i = 0 ; i < scene.n_face ; i++ ){
         for( int j = i + 1 ; j < scene.n_face ; j++ ){
             searchSceneSurface( scene, i, &im, &ip, &iface );
             searchSceneSurface( scene, j, &jm, &jp, &jface );
-            refineClip( &scene.list[im].plist[ip].flist[iface], &scene.list[jm].plist[jp].flist[jface], 0.5, 0.3 );
+            refineClip( &scene.list[im].plist[ip].flist[iface], &scene.list[jm].plist[jp].flist[jface], 1, 0.3 );
         }
     }
 
@@ -492,7 +491,7 @@ void init(){
         }
         scene.n_face += scene.list[i].n_face;
     }
-*/
+
     printf( "M:%d P:%d S:%d\n", scene.n_model, scene.n_patch, scene.n_face );
 
     // Hemi-Cube Generate

@@ -11,7 +11,11 @@
 
 #include "geometric.h"
 
+#define CLIP_TYPE 1
 #define CLIP 2
+#define AEPS 2
+#define FEPS 0.3
+
 #define FF_TYPE 0
 #define OCCULSION_CHK 1
 
@@ -418,7 +422,7 @@ void init(){
     setReflection( &lightSource, 0.8, 0.8, 0.8 );
     setEmission( &lightSource, 1.27, 1.27, 1.27 );
 
-    for( int i = 0 ; i < CLIP ; i++ ){
+    for( int i = 0 ; i < CLIP && !CLIP_TYPE ; i++ ){
         clipPatch( &wall[0] );
         clipPatch( &wall[1] );
         clipPatch( &wall[2] );
@@ -426,7 +430,7 @@ void init(){
         clipPatch( &wall[4] );
         clipPatch( &wall[5] );
     }
-    for( int i = 0 ; i < CLIP-1 ; i++ ){
+    for( int i = 0 ; i < CLIP-1 && !CLIP_TYPE  ; i++ ){
         clipPatch( &square[0] );
         clipPatch( &square[1] );
         clipPatch( &lightSource );
@@ -447,51 +451,53 @@ void init(){
     addScene( &scene, wall[3] );
     addScene( &scene, wall[4] );
     addScene( &scene, wall[5] );
-/*
+
     // refine clip
-    for( int i = 0 ; i < scene.n_face ; i++ ){
-        for( int j = i + 1 ; j < scene.n_face ; j++ ){
-            searchSceneSurface( scene, i, &im, &ip, &iface );
-            searchSceneSurface( scene, j, &jm, &jp, &jface );
-            refineClip( &scene.list[im].plist[ip].flist[iface], &scene.list[jm].plist[jp].flist[jface], 1, 0.3 );
+    if( CLIP_TYPE ){
+        for( int i = 0 ; i < scene.n_face ; i++ ){
+            for( int j = i + 1 ; j < scene.n_face ; j++ ){
+                searchSceneSurface( scene, i, &im, &ip, &iface );
+                searchSceneSurface( scene, j, &jm, &jp, &jface );
+                refineClip( &scene.list[im].plist[ip].flist[iface], &scene.list[jm].plist[jp].flist[jface], AEPS, FEPS );
+            }
+        }
+
+        extern std::vector<SURFACE_3D> fcolect;
+        SURFACE_3D ftemp;
+        for( int i = 0 ; i < scene.n_patch ; i++ ){
+            searchScenePatch( scene, i, &im, &ip );
+
+            // Clear vector
+            fcolect.clear();
+
+            ftemp = scene.list[im].plist[ip].flist[0];
+            scene.list[im].plist[ip].flist.pop_back();
+
+            travelNode( &ftemp );
+
+            //delNode( ftemp.ne );
+            //delNode( ftemp.nw );
+            //delNode( ftemp.se );
+            //delNode( ftemp.sw );
+
+            // Store element to patch
+            scene.list[im].plist[ip].n_face = fcolect.size();
+            for( int j = 0 ; j < (int) fcolect.size() ; j++ )
+                scene.list[im].plist[ip].flist.push_back( fcolect[j] );
+
+        }
+
+        // Update information
+        scene.n_face = 0;
+        for( int i = 0 ; i < scene.n_model ; i++ ){
+            scene.list[i].n_face = 0;
+            for( int j = 0 ; j < scene.list[i].n_patch ; j++ ){
+                scene.list[i].n_face += scene.list[i].plist[j].n_face;
+            }
+            scene.n_face += scene.list[i].n_face;
         }
     }
 
-    extern std::vector<SURFACE_3D> fcolect;
-    SURFACE_3D ftemp;
-    for( int i = 0 ; i < scene.n_patch ; i++ ){
-        searchScenePatch( scene, i, &im, &ip );
-
-        // Clear vector
-        fcolect.clear();
-
-        ftemp = scene.list[im].plist[ip].flist[0];
-        scene.list[im].plist[ip].flist.pop_back();
-
-        travelNode( &ftemp );
-
-        //delNode( ftemp.ne );
-        //delNode( ftemp.nw );
-        //delNode( ftemp.se );
-        //delNode( ftemp.sw );
-
-        // Store element to patch
-        scene.list[im].plist[ip].n_face = fcolect.size();
-        for( int j = 0 ; j < (int) fcolect.size() ; j++ )
-            scene.list[im].plist[ip].flist.push_back( fcolect[j] );
-
-    }
-
-    // Update information
-    scene.n_face = 0;
-    for( int i = 0 ; i < scene.n_model ; i++ ){
-        scene.list[i].n_face = 0;
-        for( int j = 0 ; j < scene.list[i].n_patch ; j++ ){
-            scene.list[i].n_face += scene.list[i].plist[j].n_face;
-        }
-        scene.n_face += scene.list[i].n_face;
-    }
-*/
     printf( "M:%d P:%d S:%d\n", scene.n_model, scene.n_patch, scene.n_face );
 
     // Hemi-Cube Generate

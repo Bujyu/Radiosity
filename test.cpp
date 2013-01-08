@@ -45,7 +45,7 @@ MODEL lightSource;
 SCENE scene;
 
 
-std::vector<POINT_3D> *pcollect;
+std::vector<POINT_3D> **pcollect;
 
 // Matrix
 MAT FF;
@@ -417,7 +417,7 @@ void init(){
     lightCreate();
     setReflection( &lightSource, 0.8, 0.8, 0.8 );
     setEmission( &lightSource, 1.27, 1.27, 1.27 );
-/*
+
     for( int i = 0 ; i < CLIP ; i++ ){
         clipPatch( &wall[0] );
         clipPatch( &wall[1] );
@@ -431,7 +431,7 @@ void init(){
         clipPatch( &square[1] );
         clipPatch( &lightSource );
     }
-*/
+
     scene = createScene();
     // Light
     addScene( &scene, lightSource );
@@ -447,7 +447,7 @@ void init(){
     addScene( &scene, wall[3] );
     addScene( &scene, wall[4] );
     addScene( &scene, wall[5] );
-
+/*
     // refine clip
     for( int i = 0 ; i < scene.n_face ; i++ ){
         for( int j = i + 1 ; j < scene.n_face ; j++ ){
@@ -491,7 +491,7 @@ void init(){
         }
         scene.n_face += scene.list[i].n_face;
     }
-
+*/
     printf( "M:%d P:%d S:%d\n", scene.n_model, scene.n_patch, scene.n_face );
 
     // Hemi-Cube Generate
@@ -580,33 +580,37 @@ void init(){
     printf("Complete matrix solution\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
 
     // Gouraud Shader prepared
-    pcollect = new std::vector<POINT_3D>[scene.n_patch];
+    pcollect = new std::vector<POINT_3D>*[scene.n_model];
+    for( int i = 0 ; i < scene.n_model ; i++ )
+        pcollect[i] = new std::vector<POINT_3D>[scene.list[i].n_patch];
 
     // Collect Point
     int flag = 0;
-    for( int i = 0 ; i < scene.n_face; i++ ){
-        searchSceneSurface( scene, i, &im, &ip, &iface);
+
+    for( int i = 0 ; i < scene.n_face ; i++ ){
+        searchSceneSurface( scene, i, &im, &ip, &iface );
         for( int j = 0 ; j < scene.list[im].plist[ip].flist[iface].n_point ; j++ ){
-            for( int k = 0 ; k < (int) pcollect[ip].size() ; k++ ){
-                if( PTEQU( pcollect[ip][k], scene.list[im].plist[ip].flist[iface].plist[j] ) )
+            for( int k = 0 ; k < (int) pcollect[im][ip].size() ; k++ ){
+                if( PTEQU( pcollect[im][ip][k], scene.list[im].plist[ip].flist[iface].plist[j] ) )
                     flag = 1;
             }
             if( !flag )
-                pcollect[ip].push_back( scene.list[im].plist[ip].flist[iface].plist[j] );
+                pcollect[im][ip].push_back( scene.list[im].plist[ip].flist[iface].plist[j] );
             flag = 0;
         }
     }
 
     // Update point rad
-    for( int i = 0 ; i < scene.n_face; i++ ){
-        searchSceneSurface( scene, i, &im, &ip, &iface);
+
+    for( int i = 0 ; i < scene.n_face ; i++ ){
+        searchSceneSurface( scene, i, &im, &ip, &iface );
         for( int j = 0 ; j < scene.list[im].plist[ip].flist[iface].n_point ; j++ ){
-            for( int k = 0 ; k < (int) pcollect[ip].size() ; k++ ){
-                if( PTEQU( pcollect[ip][k], scene.list[im].plist[ip].flist[iface].plist[j] ) ){
-                    pcollect[ip][k].rad[0] += b[0].vector[i];
-                    pcollect[ip][k].rad[1] += b[1].vector[i];
-                    pcollect[ip][k].rad[2] += b[2].vector[i];
-                    pcollect[ip][k].count++;
+            for( int k = 0 ; k < (int) pcollect[im][ip].size() ; k++ ){
+                if( PTEQU( pcollect[im][ip][k], scene.list[im].plist[ip].flist[iface].plist[j] ) ){
+                    pcollect[im][ip][k].rad[0] += b[0].vector[i];
+                    pcollect[im][ip][k].rad[1] += b[1].vector[i];
+                    pcollect[im][ip][k].rad[2] += b[2].vector[i];
+                    pcollect[im][ip][k].count++;
                     break;
                 }
             }
@@ -615,10 +619,11 @@ void init(){
 
     // average point rad
     for( int i = 0 ; i < scene.n_patch ; i++ ){
-        for( int j = 0 ; j < (int) pcollect[i].size() ; j++ ){
-            pcollect[i][j].rad[0] /= pcollect[i][j].count;
-            pcollect[i][j].rad[1] /= pcollect[i][j].count;
-            pcollect[i][j].rad[2] /= pcollect[i][j].count;
+        searchScenePatch( scene, i, &im, &ip );
+        for( int j = 0 ; j < (int) pcollect[im][ip].size() ; j++ ){
+            pcollect[im][ip][j].rad[0] /= pcollect[im][ip][j].count;
+            pcollect[im][ip][j].rad[1] /= pcollect[im][ip][j].count;
+            pcollect[im][ip][j].rad[2] /= pcollect[im][ip][j].count;
         }
     }
 
@@ -674,9 +679,9 @@ void content( void ){
         grid ? glPolygonMode( GL_FRONT_AND_BACK, GL_LINE ) : glPolygonMode( GL_BACK, GL_LINE );
         glBegin( GL_POLYGON );
         for( int k = 0 ; k < scene.list[fm].plist[fp].flist[f].n_point ; k++ ){
-            for( int n = 0 ; n < (int) pcollect[fp].size() && gouraudShader ; n++ ){
-                if( PTEQU( scene.list[fm].plist[fp].flist[f].plist[k], pcollect[fp][n] ) ){
-                    glColor3f( clap( pcollect[fp][n].rad[0] * 3, 0.0, 1.0 ), clap( pcollect[fp][n].rad[1] * 3, 0.0, 1.0 ), clap( pcollect[fp][n].rad[2] * 3, 0.0, 1.0 ) );
+            for( int n = 0 ; n < (int) pcollect[fm][fp].size() && gouraudShader ; n++ ){
+                if( PTEQU( scene.list[fm].plist[fp].flist[f].plist[k], pcollect[fm][fp][n] ) ){
+                    glColor3f( clap( pcollect[fm][fp][n].rad[0] * 3, 0.0, 1.0 ), clap( pcollect[fm][fp][n].rad[1] * 3, 0.0, 1.0 ), clap( pcollect[fm][fp][n].rad[2] * 3, 0.0, 1.0 ) );
                     break;
                 }
             }

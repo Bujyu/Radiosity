@@ -49,7 +49,7 @@ double lengthPP( POINT_3D a, POINT_3D b ){
 }
 
 void ptPrint( POINT_3D p ){
-    printf("[%.4lf %.4lf %.4lf]\n", p.x, p.y, p.z );
+    printf("[%.4f %.4f %.4f]\n", p.x, p.y, p.z );
 }
 
 // Surface
@@ -161,16 +161,20 @@ void interpolationSqr( POINT_3D *ipt, const SURFACE_3D &face, double u, double v
 void interpolationTri( POINT_3D *ipt, const SURFACE_3D &face, double u, double v ){
 
     int n = 0;
-    double a = lengthPP( face.plist[1], face.plist[1] );
+    double a = lengthPP( face.plist[1], face.plist[2] );
 
     if( a < lengthPP( face.plist[0], face.plist[1] ) )
         n = 2;
     if( a < lengthPP( face.plist[0], face.plist[2] ) )
         n = 1;
-
+/*
     (*ipt).x = ( 1.0 - u - v ) * face.plist[n].x + u * face.plist[(n+1)%3].x + v * face.plist[(n+2)%3].x;
     (*ipt).y = ( 1.0 - u - v ) * face.plist[n].y + u * face.plist[(n+1)%3].y + v * face.plist[(n+2)%3].y;
     (*ipt).z = ( 1.0 - u - v ) * face.plist[n].z + u * face.plist[(n+1)%3].z + v * face.plist[(n+2)%3].z;
+*/
+    (*ipt).x = u * ( v * ( face.plist[(n+1)%3].x - face.plist[n].x ) + ( 1.0 - v ) * ( face.plist[(n+2)%3].x - face.plist[n].x ) );
+    (*ipt).y = u * ( v * ( face.plist[(n+1)%3].y - face.plist[n].y ) + ( 1.0 - v ) * ( face.plist[(n+2)%3].y - face.plist[n].y ) );
+    (*ipt).z = u * ( v * ( face.plist[(n+1)%3].z - face.plist[n].z ) + ( 1.0 - v ) * ( face.plist[(n+2)%3].z - face.plist[n].z ) );
 
 }
 
@@ -299,13 +303,27 @@ void clipQuadSurface( PATCH *patch ){
 
         for( int j = 0 ; j < fclone[i].n_point ; j++ ){
 
-            face = addSurface3D( 4,
+            face = fclone[i].n_point != 3 ?
+                   addSurface3D( 4,
                                  fclone[i].plist[j], centerPP( fclone[i].plist[j], fclone[i].plist[(j+1)%fclone[i].n_point] ),
-                                 center, centerPP( fclone[i].plist[(j+3)%fclone[i].n_point], fclone[i].plist[j] ) );
+                                 center, centerPP( fclone[i].plist[(j+3)%fclone[i].n_point], fclone[i].plist[j] ) ) :
+                   addSurface3D( 3,
+                                 fclone[i].plist[j],
+                                 centerPP( fclone[i].plist[j], fclone[i].plist[(j+1)%fclone[i].n_point] ),
+                                 centerPP( fclone[i].plist[(j+2)%fclone[i].n_point], fclone[i].plist[j] ) );
             face.normal = fclone[i].normal;
             //setSurface3DNormal( &face, fclone[i].normal[0], fclone[i].normal[1], fclone[i].normal[2] );
             addPatch( patch, face );
 
+        }
+
+        if( fclone[i].n_point == 3 ){
+            face = addSurface3D( 3, centerPP( fclone[i].plist[0], fclone[i].plist[1] ),
+                                    centerPP( fclone[i].plist[1], fclone[i].plist[2] ),
+                                    centerPP( fclone[i].plist[0], fclone[i].plist[2] ) );
+            face.normal = fclone[i].normal;
+            //setSurface3DNormal( &face, fclone[i].normal[0], fclone[i].normal[1], fclone[i].normal[2] );
+            addPatch( patch, face );
         }
 
     }

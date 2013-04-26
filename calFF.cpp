@@ -293,6 +293,9 @@ double meshToHC( SURFACE_3D i, SURFACE_3D j ){
     for( du = HSTEP ; du <= 1.0 ; du += STEP ){
         for( dv = HSTEP ; dv <= 1.0 ; dv += STEP ){
 
+            if( i.n_point == 3 && du + dv >= 1.0 )
+                continue;
+
             interpolation( &ipt, i, du, dv );
             for( n = 0 ; n < j.n_point ; n++ ){
                 r = lengthPP( j.plist[n], ipt );
@@ -379,7 +382,7 @@ void test(){
     j = addSurface3D( 4, addPoint3D( 1, 0, 1 ), addPoint3D( -1, 0, 1 ), addPoint3D( -1, 0, -1 ), addPoint3D( 1, 0, -1 ) );
 
     FF = meshToHC( i, j );
-    printf("%lf\n", FF );
+    printf("%f\n", FF );
 
     free( i.plist );
 

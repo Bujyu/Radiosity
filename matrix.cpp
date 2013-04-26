@@ -35,7 +35,7 @@ void mPrint( MAT m ){
     for( i = 0 ; i < m.row ; i++ ){
         printf( "%c ", i == 0 ? '[' : ' ' );
         for( j = 0 ; j < m.col ; j++ )
-            printf( "%lf%s", m.matrix[i][j], j != m.col - 1 ? ", " : " " );
+            printf( "%f%s", m.matrix[i][j], j != m.col - 1 ? ", " : " " );
         printf( " %c", i == m.row - 1 ? ']' : ';' );
     }
     printf("\n");

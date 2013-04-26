@@ -26,7 +26,7 @@ void vPrint( VEC v ){
     printf( "Vector =\n" );
     printf("[ ");
     for( i = 0 ; i < v.elements ; i++ )
-        printf( "%lf%s", v.vector[i], i != v.elements - 1 ? ", " : " " );
+        printf( "%f%s", v.vector[i], i != v.elements - 1 ? ", " : " " );
     printf("]\n\n");
 
 }

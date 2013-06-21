@@ -63,14 +63,14 @@ double calMeshFF( SURFACE_3D i, VEC inormal, SURFACE_3D j, VEC jnormal ){
     djA = jarea * ( STEP * STEP );
 
     for( diu = HSTEP ; diu <= 1.0 ; diu += STEP ){
-        for( div = HSTEP ; div <= 1.0 ; div += STEP ){
+        for( div = HSTEP ; div <= 1.0 - ( i.n_point == 3 ? diu : 0.0 ) ; div += STEP ){
 
             interpolation( &iipt, i, diu, div );
 
             FF = 0.0;
 
             for( dju = HSTEP ; dju <= 1.0 ; dju += STEP ){
-                for( djv = HSTEP ; djv <= 1.0 ; djv += STEP ){
+                for( djv = HSTEP ; djv <=  1.0 - ( j.n_point == 3 ? dju : 0.0 ) ; djv += STEP ){
 
                     interpolation( &jipt, j, dju, djv);
                     FF += calFF( iipt, inormal, jipt, jnormal ) * djA;
@@ -222,7 +222,7 @@ double clipPlane( int n, VEC ray[] ){
     double FF = 0.0;
 
     checkInOut( n, ray );
-    for( int i = 0 ; i < 5 ; i++ )
+    for( int i = 0 ; i < 5 ; i++ )  // Hemi-cube faces
         for( int j = 0 ; j < patch[i].n_face ; j++ )
             if( patch[i].flist[j].visited == 1 )
                 FF += patch[i].flist[j].FF;

@@ -13,7 +13,35 @@ typedef struct vec{
 } VEC;
 
 VEC vCreate( int elements );
+VEC vCreateArg( int elements, ... );
 void vPrint( VEC v );
+
+#define VASSIGN3( t, a ) {  \
+            t.vector[0] = a.vector[0]; \
+            t.vector[1] = a.vector[1]; \
+            t.vector[2] = a.vector[2]; \
+        }
+#define VADD3( t, a, b ) {  \
+            t.vector[0] = a.vector[0] + b.vector[0]; \
+            t.vector[1] = a.vector[1] + b.vector[1]; \
+            t.vector[2] = a.vector[2] + b.vector[2]; \
+        }
+#define VSUB3( t, a, b ) {  \
+            t.vector[0] = a.vector[0] - b.vector[0]; \
+            t.vector[1] = a.vector[1] - b.vector[1]; \
+            t.vector[2] = a.vector[2] - b.vector[2]; \
+        }
+#define VMUL3( t, a, b ) {  \
+            t.vector[0] = a.vector[0] * b.vector[0]; \
+            t.vector[1] = a.vector[1] * b.vector[1]; \
+            t.vector[2] = a.vector[2] * b.vector[2]; \
+        }
+#define VDIV3( t, a, b ) {  \
+            t.vector[0] = a.vector[0] / b.vector[0]; \
+            t.vector[1] = a.vector[1] / b.vector[1]; \
+            t.vector[2] = a.vector[2] / b.vector[2]; \
+        }
+
 
 /// Basic Function
 /// 1. vector addition

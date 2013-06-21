@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cstdarg>
 #include <cmath>
 #include <ctime>
 
@@ -14,6 +15,24 @@ VEC vCreate( int elements ){
     v.vector = (double*) malloc( sizeof( double ) * elements );
     for( int i = 0 ; i < elements ; i++ )
         v.vector[i] = 0.0;
+
+    return v;
+
+}
+
+VEC vCreateArg( int elements, ... ){
+
+    VEC v;
+
+    va_list val;
+    va_start( val, elements );
+
+    v.elements = elements;
+    v.vector = (double*) malloc( sizeof( double ) * elements );
+    for( int i = 0 ; i < elements ; i++ )
+        v.vector[i] = va_arg( val, double );
+
+    va_end( val );
 
     return v;
 

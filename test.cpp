@@ -11,12 +11,14 @@
 
 #include "geometric.h"
 
-#define CLIP_TYPE 1
-#define CLIP 2
+// Parameter of clip and switch clip method
+#define CLIP_TYPE 0
+#define CLIP 0
 #define AEPS 2
 #define FEPS 0.3
 
-#define FF_TYPE 0
+// Switch of Form-factor algorithm and occlusion checking
+#define FF_TYPE 1
 #define OCCULSION_CHK 1
 
 extern void hemiCubeGenrator();
@@ -30,24 +32,35 @@ extern double calMeshFF( SURFACE_3D i, VEC inormal, SURFACE_3D j, VEC jnormal );
 
 extern VEC matrix_solution( VEC emission, VEC reflection, MAT FF );
 
+extern void DoRayTrace( void );
+
 int gw, gh;
 
 //Main Func
 int mainwin;
 int viewer;
 
+// Switch
 int colorMode;
 int gouraudShader;
+int rayTracing;
 int grid;
 
 //Model
 MODEL sphere;
 MODEL square[2];
 MODEL wall[6];
+MODEL tri;
 MODEL lightSource;
 
 SCENE scene;
 
+// Variables for ray-tracing
+GLubyte image[600][600][3];
+int maxlevel;       // max level of reflection
+VEC lightpos[1];    // For reflection and gloss 3-dim
+int numlights;
+VEC camera;         // For camera pos 3-dim
 
 std::vector<POINT_3D> **pcollect;
 
@@ -65,8 +78,29 @@ void progressBar( int total, int now, int barLength ){
     printf("\r[");
     for( int i = 0 ; i < barLength ; i++ )
         printf("%c", floor( percentComplete * barLength - 0.5 ) >= i   ? '=' : ' ' );
-    printf("] %3.0lf%%",  (double) ( now + 1 ) / total * 100 );
+    printf("] %3.0f%%",  (double) ( now + 1 ) / total * 100 );
     printf("\t%5d/%-5d", now + 1, total );
+
+}
+
+void triangleCreate( MODEL *target, double x, double y, double z ){
+
+    PATCH patch;
+    SURFACE_3D face;
+    POINT_3D pt[3];
+
+    *target = createModel();
+
+    pt[0] = addPoint3D( x + 0, y + -2, z + 0 );
+    pt[1] = addPoint3D( x + 7, y + -2, z + 0 );
+    pt[2] = addPoint3D( x + 0, y + -2, z + 7 );
+
+    // 3 2 1 0
+    patch = createPatch();
+    face = addSurface3D( 3, pt[0], pt[2], pt[1] );
+    setSurface3DNormal( &face, 0, 1, 0 );
+    addPatch( &patch, face );
+    addModel( target, patch );
 
 }
 
@@ -89,29 +123,34 @@ void sphereCreate( double x, double y, double z ){
 
     for( deg = 0 ; deg <= 18 ; deg++ ){
         for( fi = 0 ; fi <= 36 ; fi++ ){
-            sp[deg][fi].x = r * cos( ( fi - 18 ) * PI / 18 ) * cos( ( deg - 9 ) * PI / 18 );
+            sp[deg][fi].x = r * cos( ( deg - 9 ) * PI / 18 ) * cos( ( fi - 18 ) * PI / 18 );
             sp[deg][fi].y = r * sin( ( deg - 9 ) * PI / 18 );
-            sp[deg][fi].z = r * sin( ( fi - 18 ) * PI / 18 ) * cos( ( deg - 9 ) * PI / 18 );
+            sp[deg][fi].z = r * cos( ( deg - 9 ) * PI / 18 ) * sin( ( fi - 18 ) * PI / 18 );
        }
     }
 
+    patch = createPatch();
     for( deg = 0 ; deg < 18 ; deg++ ){
         for( fi = 0 ; fi <= 36 ; fi++ ){
+
+            if( deg != 0 && deg != 17 )   continue;
 
             a = addPoint3D(          sp[deg][fi].x + x,          sp[deg][fi].y + y,          sp[deg][fi].z + z );
             b = addPoint3D(        sp[deg+1][fi].x + x,        sp[deg+1][fi].y + y,        sp[deg+1][fi].z + z );
             c = addPoint3D( sp[deg+1][(fi+1)%36].x + x, sp[deg+1][(fi+1)%36].y + y, sp[deg+1][(fi+1)%36].z + z );
             d = addPoint3D(   sp[deg][(fi+1)%36].x + x,   sp[deg][(fi+1)%36].y + y,   sp[deg][(fi+1)%36].z + z );
 
-            patch = createPatch();
-            face = ( deg != 0 || deg != 17 ) ? addSurface3D( 4, a, b, c, d ) : addSurface3D( 3, a, b, c );
+            //patch = createPatch();
+            // Order change when deg == 17
+            face = ( deg != 0 && deg != 17 ) ? addSurface3D( 4, a, b, c, d ) : ( ( deg == 0 ) ? addSurface3D( 3, a, b, c ) : addSurface3D( 3, a, b, d ) );
             n = surfaceCenter( face );
-            setSurface3DNormal( &face, n.x, n.y, n.z );
+            setSurface3DNormal( &face, -n.x, -n.y, -n.z );
             addPatch( &patch, face );
-            addModel( &sphere, patch );
+            //addModel( &sphere, patch );
 
         }
     }
+    addModel( &sphere, patch );
 
 }
 
@@ -189,7 +228,6 @@ void lightCreate(){
     POINT_3D pt[12];
 
     lightSource = createModel();
-
 
     pt[0] = addPoint3D( 5, 9, -5 );
     pt[1] = addPoint3D( -5, 9, -5 );
@@ -310,6 +348,10 @@ void keyboard( unsigned char key, int x, int y ){
         case 's':
             gouraudShader ^= 1;
             break;
+        case 'R':
+        case 'r':
+            rayTracing ^= 1;
+            break;
         default:
             break;
     }
@@ -381,25 +423,19 @@ void axis(){
 
 }
 
-void init(){
-
-    // Initial Var
-    colorMode = 0;  // Diffuse
-    gouraudShader = 0;  //No interpolation
-    grid = 0;
-
-    int im, ip, iface;
-    int jm, jp, jface;
-
-    LARGE_INTEGER t1, t2, ts;
-    QueryPerformanceFrequency(&ts);
+void setModel(){
 
     //float center[3], radius = 0.0;
+    lightpos[0] = vCreate( 3 );    // Initial light position vec
+    numlights = 0;
 
     //Model Create
+
+    /* Sphere */
     sphereCreate( 4, -6, 0 );
     setReflection( &sphere, 0.54, 0.54, 0.54 );
 
+    /* Square */
     double squ0_size[3] = { 7, 7, 7 };
     double squ0_pos[3] = { -5, ( squ0_size[1] / 2 ) - 10, 5 };
     squareCreate( &square[0], squ0_size, squ0_pos );
@@ -410,6 +446,11 @@ void init(){
     squareCreate( &square[1], squ1_size, squ1_pos );
     setReflection( &square[1], 0.54, 0.54, 0.54 );
 
+    /* Triangle */
+    triangleCreate( &tri, -3, -4, -3 );
+    setReflection( &tri, 0.84, 0.84, 0.84 );
+
+    /* Wall */
     wallCreate();
     setReflection( &wall[0], 0.84, 0.84, 0.84 );
     setReflection( &wall[1], 1.0, 0.0, 0.0 );
@@ -418,9 +459,37 @@ void init(){
     setReflection( &wall[4], 0.54, 0.54, 0.54 );
     setReflection( &wall[5], 0.84, 0.84, 0.84 );
 
+    /* Light */
     lightCreate();
+
+    // Light is setting at (0,9,0) - center of the light source
+    lightpos[numlights].vector[0] = 0;
+    lightpos[numlights].vector[1] = 9;
+    lightpos[numlights].vector[2] = 0;
+    numlights++;
+
     setReflection( &lightSource, 0.8, 0.8, 0.8 );
     setEmission( &lightSource, 1.27, 1.27, 1.27 );
+
+}
+
+void init(){
+
+    // Initial Var
+    colorMode = 0;  // Diffuse
+    gouraudShader = 0;  //No interpolation
+    rayTracing = 0;  // Initial ray-tracing is off
+    grid = 0;
+
+    maxlevel = 3;   // Tracing depth
+
+    int im, ip, iface;
+    int jm, jp, jface;
+
+    LARGE_INTEGER t1, t2, ts;
+    QueryPerformanceFrequency(&ts);
+
+    setModel();
 
     for( int i = 0 ; i < CLIP && !CLIP_TYPE ; i++ ){
         clipPatch( &wall[0] );
@@ -434,6 +503,7 @@ void init(){
         clipPatch( &square[0] );
         clipPatch( &square[1] );
         clipPatch( &lightSource );
+        //clipPatch( &tri );
     }
 
     scene = createScene();
@@ -442,8 +512,10 @@ void init(){
 
     // Model
     //addScene( &scene, sphere );
-    addScene( &scene, square[0] );
-    addScene( &scene, square[1] );
+    //addScene( &scene, square[0] );
+    //addScene( &scene, square[1] );
+
+    addScene( &scene, tri );
 
     addScene( &scene, wall[0] );
     addScene( &scene, wall[1] );
@@ -498,6 +570,8 @@ void init(){
         }
     }
 
+    //addScene( &scene, sphere );
+
     printf( "M:%d P:%d S:%d\n", scene.n_model, scene.n_patch, scene.n_face );
 
     // Hemi-Cube Generate
@@ -506,7 +580,7 @@ void init(){
         QueryPerformanceCounter(&t1);
         hemiCubeGenrator();
         QueryPerformanceCounter(&t2);
-        printf("Complete Hemi-Cube Generate\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
+        printf("Complete Hemi-Cube Generate\t%f s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
         //test();
     }
 
@@ -529,7 +603,7 @@ void init(){
         }
     }
     QueryPerformanceCounter(&t2);
-    printf("\nComplete occlusion checking\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
+    printf("\nComplete occlusion checking\t%f s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
 
     //mPrint( visible );
 
@@ -576,14 +650,14 @@ void init(){
         }
     }
     QueryPerformanceCounter(&t2);
-    printf("\nComplete FF calculation\t\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
+    printf("\nComplete FF calculation\t\t%f s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
 
     printf("Start matrix solution\n");
     QueryPerformanceCounter(&t1);
     for( int i = 0 ; i < 3 ; i++ )
         b[i] = matrix_solution( e[i], p[i], FF );
     QueryPerformanceCounter(&t2);
-    printf("Complete matrix solution\t%lf s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
+    printf("Complete matrix solution\t%f s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
 
     // Gouraud Shader prepared
     pcollect = new std::vector<POINT_3D>*[scene.n_model];
@@ -657,6 +731,20 @@ void reshape( int w, int h ){
 
 void display(){}
 
+// For drawing the result of ray-tracing
+void DisplayImage( void ){
+
+	glMatrixMode( GL_PROJECTION ); glPushMatrix(); glLoadIdentity();
+	gluOrtho2D( 0, 20, 0, 20 );  // this doesnt really matter: we draw an image
+	glMatrixMode( GL_MODELVIEW ); glPushMatrix(); glLoadIdentity();
+	glRasterPos2i( 0, 0 );
+	glDrawPixels( 600, 600, GL_RGB, GL_UNSIGNED_BYTE, image );
+	glPopMatrix();
+	glMatrixMode( GL_PROJECTION ); glPopMatrix();
+	glMatrixMode( GL_MODELVIEW );
+
+}
+
 void content( void ){
 
     int fm, fp, f;
@@ -664,41 +752,46 @@ void content( void ){
 
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-    axis();
-
-    //drawHemiCube();
-    glPushAttrib( GL_ALL_ATTRIB_BITS );
-    for( int i = 0 ; i < scene.n_face ; i++ ){
-
-        searchSceneSurface( scene, i, &fm, &fp, &f );
-
-        if( fm == 8 )
-            continue;
-
-        color[0] = colorMode ? scene.list[fm].reflection[0] : b[0].vector[i] * 3;
-        color[1] = colorMode ? scene.list[fm].reflection[1] : b[1].vector[i] * 3;
-        color[2] = colorMode ? scene.list[fm].reflection[2] : b[2].vector[i] * 3;
-
-        if( !gouraudShader )
-            glColor3f( clap( color[0], 0.0, 1.0 ), clap( color[1], 0.0, 1.0 ), clap( color[2], 0.0, 1.0 ) );
-
-        grid ? glPolygonMode( GL_FRONT_AND_BACK, GL_LINE ) : glPolygonMode( GL_BACK, GL_LINE );
-        glBegin( GL_POLYGON );
-        for( int k = 0 ; k < scene.list[fm].plist[fp].flist[f].n_point ; k++ ){
-            for( int n = 0 ; n < (int) pcollect[fm][fp].size() && gouraudShader ; n++ ){
-                if( PTEQU( scene.list[fm].plist[fp].flist[f].plist[k], pcollect[fm][fp][n] ) ){
-                    glColor3f( clap( pcollect[fm][fp][n].rad[0] * 3, 0.0, 1.0 ), clap( pcollect[fm][fp][n].rad[1] * 3, 0.0, 1.0 ), clap( pcollect[fm][fp][n].rad[2] * 3, 0.0, 1.0 ) );
-                    break;
-                }
-            }
-            glVertex3f( scene.list[fm].plist[fp].flist[f].plist[k].x,
-                        scene.list[fm].plist[fp].flist[f].plist[k].y,
-                        scene.list[fm].plist[fp].flist[f].plist[k].z  );
-        }
-        glEnd();
-
+    if( rayTracing ){
+        DoRayTrace();
+		DisplayImage();
     }
-    glPopAttrib();
+    else{
+        //axis();
+        //drawHemiCube();
+        glPushAttrib( GL_ALL_ATTRIB_BITS );
+        for( int i = 0 ; i < scene.n_face ; i++ ){
+
+            searchSceneSurface( scene, i, &fm, &fp, &f );
+
+            if( fm == 7 )
+                continue;
+
+            color[0] = colorMode ? scene.list[fm].reflection[0] : b[0].vector[i] * 3;
+            color[1] = colorMode ? scene.list[fm].reflection[1] : b[1].vector[i] * 3;
+            color[2] = colorMode ? scene.list[fm].reflection[2] : b[2].vector[i] * 3;
+
+            if( !gouraudShader )
+                glColor3f( clap( color[0], 0.0, 1.0 ), clap( color[1], 0.0, 1.0 ), clap( color[2], 0.0, 1.0 ) );
+
+            grid ? glPolygonMode( GL_FRONT_AND_BACK, GL_LINE ) : glPolygonMode( GL_BACK, GL_LINE );
+            glBegin( GL_POLYGON );
+            for( int k = 0 ; k < scene.list[fm].plist[fp].flist[f].n_point ; k++ ){
+                for( int n = 0 ; n < (int) pcollect[fm][fp].size() && gouraudShader ; n++ ){
+                    if( PTEQU( scene.list[fm].plist[fp].flist[f].plist[k], pcollect[fm][fp][n] ) ){
+                        glColor3f( clap( pcollect[fm][fp][n].rad[0] * 3, 0.0, 1.0 ), clap( pcollect[fm][fp][n].rad[1] * 3, 0.0, 1.0 ), clap( pcollect[fm][fp][n].rad[2] * 3, 0.0, 1.0 ) );
+                        break;
+                    }
+                }
+                glVertex3f( scene.list[fm].plist[fp].flist[f].plist[k].x,
+                            scene.list[fm].plist[fp].flist[f].plist[k].y,
+                            scene.list[fm].plist[fp].flist[f].plist[k].z  );
+            }
+            glEnd();
+
+        }
+        glPopAttrib();
+    }
 
 	glutSwapBuffers();
 

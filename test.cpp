@@ -13,7 +13,7 @@
 
 // Parameter of clip and switch clip method
 #define CLIP_TYPE 0
-#define CLIP 0
+#define CLIP 2
 #define AEPS 2
 #define FEPS 0.3
 
@@ -58,7 +58,7 @@ SCENE scene;
 // Variables for ray-tracing
 GLubyte image[600][600][3];
 int maxlevel;       // max level of reflection
-VEC lightpos[1];    // For reflection and gloss 3-dim
+VEC lightpos[5];    // For reflection and gloss 3-dim
 int numlights;
 VEC camera;         // For camera pos 3-dim
 
@@ -427,6 +427,10 @@ void setModel(){
 
     //float center[3], radius = 0.0;
     lightpos[0] = vCreate( 3 );    // Initial light position vec
+    lightpos[1] = vCreate( 3 );
+    lightpos[2] = vCreate( 3 );
+    lightpos[3] = vCreate( 3 );
+    lightpos[4] = vCreate( 3 );
     numlights = 0;
 
     //Model Create
@@ -468,6 +472,27 @@ void setModel(){
     lightpos[numlights].vector[2] = 0;
     numlights++;
 
+    lightpos[numlights].vector[0] = 5;
+    lightpos[numlights].vector[1] = 9;
+    lightpos[numlights].vector[2] = 5;
+    numlights++;
+
+    lightpos[numlights].vector[0] = -5;
+    lightpos[numlights].vector[1] = 9;
+    lightpos[numlights].vector[2] = 5;
+    numlights++;
+
+
+    lightpos[numlights].vector[0] = -5;
+    lightpos[numlights].vector[1] = 9;
+    lightpos[numlights].vector[2] = -5;
+    numlights++;
+
+    lightpos[numlights].vector[0] = 5;
+    lightpos[numlights].vector[1] = 9;
+    lightpos[numlights].vector[2] = -5;
+    numlights++;
+
     setReflection( &lightSource, 0.8, 0.8, 0.8 );
     setEmission( &lightSource, 1.27, 1.27, 1.27 );
 
@@ -481,7 +506,7 @@ void init(){
     rayTracing = 0;  // Initial ray-tracing is off
     grid = 0;
 
-    maxlevel = 3;   // Tracing depth
+    maxlevel = 1;   // Tracing depth
 
     int im, ip, iface;
     int jm, jp, jface;

@@ -98,10 +98,10 @@ void DoRayTrace( void ){
     extern void progressBar( int total, int now, int barLength );
 
 	for (i = 0; i < 600; i++) {
+
+        progressBar( 600, i, 25 );
+
 		for (j = 0; j < 600; j++) {
-
-            progressBar( 600 * 600, i * 600 + j, 25 );
-
 			// gridpt = op + ( i + 0.5 ) * div * V + ( j + 0.5 ) * div * U;
 			gridpt.vector[0] = op.vector[0] + ( i + 0.5 ) * div * V.vector[0] + ( j + 0.5 ) * div * U.vector[0];
 			gridpt.vector[1] = op.vector[1] + ( i + 0.5 ) * div * V.vector[1] + ( j + 0.5 ) * div * U.vector[1];
@@ -114,6 +114,7 @@ void DoRayTrace( void ){
 
 			level = 1;
 
+            //cout << i << "-" << j <<endl;
 			VEC intensity = raytrace( c, r, level );  // level 1 for eye ray
             intensity.vector[0] = clamp( intensity.vector[0], 0.0, 1.0 );
             intensity.vector[1] = clamp( intensity.vector[1], 0.0, 1.0 );

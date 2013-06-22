@@ -123,31 +123,31 @@ bool ShadowFeeler (const VEC &point, const VEC &light, const int faceid){
 	//    if intersect (point, dir, distance, object_i)
 	//        return TRUE;
 	// return FALSE (nothing in the way to light)
-/*
+
 	VEC tmp = vCreate( 3 );             // vector create
 
 	VSUB3( tmp, light, point );
     VEC dir = vNormalize( tmp );
-    double distance = vLength( tmp );
+    //double distance = vLength( tmp );
 
     vDestroy( tmp );                    // vector destroy
-*/
+
     extern int searchSceneSurface( const SCENE &scene, int count, int *m, int *p, int *f );
 
     int mid, pid, fid;
     searchSceneSurface( scene, faceid, &mid, &pid, &fid );
 
     int m, p, f;
+    double t;
 
-    POINT_3D  st, ed;
+    POINT_3D  st;
     st = addPoint3D( point.vector[0], point.vector[1], point.vector[2] );
-    ed = addPoint3D( light.vector[0], light.vector[1], light.vector[2] );
 
-    extern int raytrace( SURFACE_3D f, POINT_3D st, POINT_3D ed );
     for( int i = 0 ; i < scene.n_face ; i++ ) {
 
         searchSceneSurface( scene, i, &m, &p, &f );
-        if( raytrace( scene.list[m].plist[p].flist[f], st, ed ) && ( m != mid || f != fid || f != fid )  )
+        //cout << faceid << " " << i << " " << intersection( scene.list[m].plist[p].flist[f], st, dir, t ) << endl;
+        if( intersection( scene.list[m].plist[p].flist[f], st, dir, t ) && ( m != mid && f != fid && f != fid )  )
             return true;
 
     }
@@ -176,8 +176,8 @@ VEC EvaluateIlocal( const VEC &point, const int faceid, const VEC &n ){
 	//struct _material mat;
     //Get material
 
-	extern VEC lightpos[1];
-	extern VEC camera;
+	extern VEC lightpos[5];
+	//extern VEC camera;
 	extern int searchSceneSurface( const SCENE &scene, int count, int *m, int *p, int *f );
 	extern int numlights;;
 
@@ -205,8 +205,8 @@ VEC EvaluateIlocal( const VEC &point, const int faceid, const VEC &n ){
 		vDestroy( tmp );                    // vector destroy
 
 		double ndotl = vDot(n, l);
- //&& !ShadowFeeler( point, lightpos[i], faceid )
-		if ( ndotl > 0.0 ){ // no block
+        //!ShadowFeeler( point, lightpos[i], faceid )
+		if ( ndotl > 0.0  ){ // no block
 
             searchSceneSurface( scene, faceid, &mid, &pid, &fid );
 
@@ -223,9 +223,9 @@ VEC EvaluateIlocal( const VEC &point, const int faceid, const VEC &n ){
 			vDestroy( tmp );                // vector destroy
 */
 			//diffuuse component
-            intensity.vector[0] += ndotl * b[0].vector[faceid] * 3;
-            intensity.vector[1] += ndotl * b[1].vector[faceid] * 3;
-            intensity.vector[2] += ndotl * b[2].vector[faceid] * 3;
+            intensity.vector[0] += ndotl * b[0].vector[faceid];
+            intensity.vector[1] += ndotl * b[1].vector[faceid];
+            intensity.vector[2] += ndotl * b[2].vector[faceid];
 /*			intensity.vector[0] += ndotl * mat.diffuse.vector[0];
 			intensity.vector[1] += ndotl * mat.diffuse.vector[1];
 			intensity.vector[2] += ndotl * mat.diffuse.vector[2];
@@ -271,10 +271,6 @@ VEC raytrace( const VEC &c, const VEC &dir, int &level ){
     for( int i = 0 ; i < scene.n_face ; i++ ){
 
         searchSceneSurface( scene, i, &mid, &pid, &fid );
-
-        if( mid == 7 )
-            continue;
-
 		if ( intersection( scene.list[mid].plist[pid].flist[fid], st, dir, t ) && t < min_d ) {
 			hit = true;
 			first_hit = i;

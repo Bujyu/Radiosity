@@ -51,7 +51,6 @@ void GetCameraFrame( VEC& c, VEC& point, VEC& up ){
 void DoRayTrace( void ){
 
 	int i, j;
-	extern VEC camera;
 
 	// clear canvas
 	memset( image, 0, 600*600*3 );
@@ -64,7 +63,8 @@ void DoRayTrace( void ){
 	GetCameraFrame( c, point, up );
 
     // camera = c
-    camera = vClone( c );
+    extern VEC camera;
+    VASSIGN3( camera, c );
 
 	// op: origin of projection plane (lower left corner)
 	const double glnear = 1.0;
@@ -72,9 +72,9 @@ void DoRayTrace( void ){
 
 	VEC op = vCreate( 3 );
     // op = c + glnear * point;
-    op.vector[0] = c.vector[0] + glnear * point.vector[0];
-    op.vector[1] = c.vector[1] + glnear * point.vector[1];
-    op.vector[2] = c.vector[2] + glnear * point.vector[2];
+    op.vector[0] = c.vector[0] + ( glnear * point.vector[0] );
+    op.vector[1] = c.vector[1] + ( glnear * point.vector[1] );
+    op.vector[2] = c.vector[2] + ( glnear * point.vector[2] );
 
 	double w = 2 * glnear * tan( fovy / 360 * M_PI);
 
@@ -111,7 +111,6 @@ void DoRayTrace( void ){
 			VSUB3( tmp, gridpt, c );
 			r = vNormalize( tmp );
 
-
 			level = 1;
 
             //cout << i << "-" << j <<endl;
@@ -134,5 +133,10 @@ void DoRayTrace( void ){
 
     vDestroy( U );
     vDestroy( V );
+    vDestroy( op );
+
+    vDestroy( c );
+	vDestroy( point );
+	vDestroy( up );
 
 }

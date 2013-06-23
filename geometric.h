@@ -106,6 +106,7 @@ POINT_3D addPoint3D( double x, double y, double z );
 VEC vectorPP( const POINT_3D st, const POINT_3D ed );
 int checkInOutPP( POINT_3D st, POINT_3D ed, POINT_3D pt );
 POINT_3D centerPP( POINT_3D a, POINT_3D b );
+double areaTri( POINT_3D pa, POINT_3D pb, POINT_3D pc );
 double lengthPP( POINT_3D a, POINT_3D b );
 void ptPrint( POINT_3D p );
 

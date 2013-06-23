@@ -81,7 +81,7 @@ bool intersectionTri( SURFACE_3D &f, POINT_3D &st, const VEC &dir, double &t ){
 bool intersectionSqr( SURFACE_3D &f, POINT_3D &st, const VEC &dir, double &t ){
 
     SURFACE_3D tri_1, tri_2;
-    int flag;
+    bool flag;
 
     // Split square to two triangles
     tri_1 = addSurface3D( 3, f.plist[0], f.plist[1], f.plist[2]  );
@@ -92,7 +92,7 @@ bool intersectionSqr( SURFACE_3D &f, POINT_3D &st, const VEC &dir, double &t ){
     free( tri_1.plist );
     free( tri_2.plist );
 
-    return (bool) flag;
+    return flag;
 
 }
 
@@ -147,7 +147,7 @@ bool ShadowFeeler (const VEC &point, const VEC &light, const int faceid){
 
         searchSceneSurface( scene, i, &m, &p, &f );
         //cout << faceid << " " << i << " " << intersection( scene.list[m].plist[p].flist[f], st, dir, t ) << endl;
-        if( intersection( scene.list[m].plist[p].flist[f], st, dir, t ) && ( m != mid && f != fid && f != fid )  )
+        if( intersection( scene.list[m].plist[p].flist[f], st, dir, t ) && ( m != mid && p != pid && f != fid )  )
             return true;
 
     }
@@ -172,71 +172,65 @@ struct _material {
 
 VEC EvaluateIlocal( const VEC &point, const int faceid, const VEC &n ){
 
-	// compute normal of objectid at point
-	//struct _material mat;
-    //Get material
-
 	extern VEC lightpos[5];
 	//extern VEC camera;
 	extern int searchSceneSurface( const SCENE &scene, int count, int *m, int *p, int *f );
 	extern int numlights;;
 
-	int mid, pid, fid;
+	// compute normal of objectid at point
+	//struct _material mat;
+
+    int mid, pid, fid;
 
 	VEC intensity = vCreateArg( 3, 0.0, 0.0, 0.0 );
 	for( int i = 0; i < numlights; i++ ) {
 
         extern VEC b[3];
-/*
-        intensity.vector[0] += scene.list[mid].reflection[0];
-		intensity.vector[1] += scene.list[mid].reflection[1];
-		intensity.vector[2] += scene.list[mid].reflection[2];
-*/
-        /*
+
+        searchSceneSurface( scene, faceid, &mid, &pid, &fid );
         //ambient component
-		intensity.vector[0] += mat.ambient.vector[0];
-		intensity.vector[1] += mat.ambient.vector[1];
-		intensity.vector[2] += mat.ambient.vector[2];
-		*/
+        intensity.vector[0] += b[0].vector[faceid]*3;
+        intensity.vector[1] += b[1].vector[faceid]*3;
+        intensity.vector[2] += b[2].vector[faceid]*3;
+
 
 		VEC tmp = vCreate( 3 );             // vector create
 		VSUB3( tmp, lightpos[i], point )
 		VEC l = vNormalize( tmp );
 		vDestroy( tmp );                    // vector destroy
+		double ndotl = vDot( n, l );
 
-		double ndotl = vDot(n, l);
-        //!ShadowFeeler( point, lightpos[i], faceid )
-		if ( ndotl > 0.0  ){ // no block
+		if ( ndotl > 0.0 && !ShadowFeeler( point, lightpos[i], faceid )  ){ // no block
 
-            searchSceneSurface( scene, faceid, &mid, &pid, &fid );
+            //diffuuse component
+            intensity.vector[0] += ndotl * b[0].vector[faceid];
+            intensity.vector[1] += ndotl * b[1].vector[faceid];
+            intensity.vector[2] += ndotl * b[2].vector[faceid];
 
-		    //Has edited variable reflect
+/*
+            //Has edited variable reflect
 			VEC reflect = vCreate( 3 );
 			tmp = vScalar( n, 2 * ndotl );  // vector create
 			VSUB3( tmp, tmp, l );
 			reflect = vNormalize( tmp );
 			vDestroy( tmp );                // vector destroy
-/*
+
 			tmp = vCreate( 3 );             // vector create
 			VSUB3( tmp, camera, point );
 			VEC v = vNormalize( tmp );
 			vDestroy( tmp );                // vector destroy
-*/
-			//diffuuse component
-            intensity.vector[0] += ndotl * b[0].vector[faceid];
-            intensity.vector[1] += ndotl * b[1].vector[faceid];
-            intensity.vector[2] += ndotl * b[2].vector[faceid];
-/*			intensity.vector[0] += ndotl * mat.diffuse.vector[0];
-			intensity.vector[1] += ndotl * mat.diffuse.vector[1];
-			intensity.vector[2] += ndotl * mat.diffuse.vector[2];
 
 			//specular component
-			double shininessFactor = vDot( reflect, v ) * mat.shininess;
-            intensity.vector[0] += pow( shininessFactor, mat.specular.vector[0] );
-            intensity.vector[1] += pow( shininessFactor, mat.specular.vector[1] );
-            intensity.vector[2] += pow( shininessFactor, mat.specular.vector[2] );
+			double shininessFactor = vDot( reflect, v ) * 250;
+            intensity.vector[0] += pow( shininessFactor, 1.0 );
+            intensity.vector[1] += pow( shininessFactor, 1.0 );
+            intensity.vector[2] += pow( shininessFactor, 1.0 );
+
+            vDestroy( reflect );
 */
 		}
+
+        vDestroy( l );
 
 	}
 
@@ -253,13 +247,13 @@ VEC raytrace( const VEC &c, const VEC &dir, int &level ){
 	extern int maxlevel;
 	//extern MAT visible;
 
-	if (level > maxlevel)
+	if( level > maxlevel )
 		return vCreateArg( 3, 0.0, 0.0, 0.0 );
 
 	level++;
 
 	// {find first hit (object, point)}
-	int first_hit = 0;
+	int first_hit = -1;
 	bool hit = false;
 	double min_d = 1e10;
 	double t;
@@ -271,7 +265,7 @@ VEC raytrace( const VEC &c, const VEC &dir, int &level ){
     for( int i = 0 ; i < scene.n_face ; i++ ){
 
         searchSceneSurface( scene, i, &mid, &pid, &fid );
-		if ( intersection( scene.list[mid].plist[pid].flist[fid], st, dir, t ) && t < min_d ) {
+		if( intersection( scene.list[mid].plist[pid].flist[fid], st, dir, t ) && t < min_d ) {
 			hit = true;
 			first_hit = i;
 			min_d = t;
@@ -279,31 +273,33 @@ VEC raytrace( const VEC &c, const VEC &dir, int &level ){
 
     }
 
-	if( hit ){
+    if( hit ){
 
 		VEC point = vCreate( 3 );
-
 		point.vector[0] = c.vector[0] + dir.vector[0] * min_d; // compute first hit point
 		point.vector[1] = c.vector[1] + dir.vector[1] * min_d; // compute first hit point
 		point.vector[2] = c.vector[2] + dir.vector[2] * min_d; // compute first hit point
 
+        searchSceneSurface( scene, first_hit, &mid, &pid, &fid );       // Get hit face idx
 		VEC normal = vClone( scene.list[mid].plist[pid].flist[fid].normal );
+
 		VEC intensity = EvaluateIlocal( point, first_hit, normal );
-		double Kr = 0.2;
+		double Kr = 0.6;
+
 		extern VEC camera;
-		VEC reflect = vCreate( 3 );
+		VEC tmp = vCreate( 3 );
 
 		// vNormalize( 2 * vDot( camera - point, normal ) * normal - ( camera - point ) );
-		VSUB3( reflect, camera, point );    // Vector camera to point
-		double dot = vDot( reflect, normal );
+		VSUB3( tmp, camera, point );    // Vector camera to point
+		double dot = vDot( tmp, normal );
+        tmp.vector[0] = 2 * dot * normal.vector[0] - tmp.vector[0];
+        tmp.vector[1] = 2 * dot * normal.vector[1] - tmp.vector[1];
+        tmp.vector[2] = 2 * dot * normal.vector[2] - tmp.vector[2];
 
-        normal.vector[0] *= 2 * dot;
-        normal.vector[1] *= 2 * dot;
-        normal.vector[2] *= 2 * dot;
+        VEC reflect = vNormalize( tmp );
+        vDestroy( tmp );
 
-        VSUB3( reflect, normal, reflect );
-
-        VEC tmp = raytrace( point, reflect, ++level );
+        tmp = raytrace( point, reflect, ++level );
 		intensity.vector[0] += Kr * clamp( tmp.vector[0], 0.0, 1.0 );
 		intensity.vector[1] += Kr * clamp( tmp.vector[1], 0.0, 1.0 );
 		intensity.vector[2] += Kr * clamp( tmp.vector[2], 0.0, 1.0 );
@@ -311,6 +307,7 @@ VEC raytrace( const VEC &c, const VEC &dir, int &level ){
 		vDestroy( tmp );
 		vDestroy( reflect );
 		vDestroy( normal );
+		vDestroy( point );
 
     //    if (transparent)
     // 		 {trace the ray in the object, until it move out}

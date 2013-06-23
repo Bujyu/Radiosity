@@ -52,13 +52,15 @@ MODEL square[2];
 MODEL wall[6];
 MODEL tri;
 MODEL lightSource;
+MODEL mirror;
+
 
 SCENE scene;
 
 // Variables for ray-tracing
 GLubyte image[600][600][3];
 int maxlevel;       // max level of reflection
-VEC lightpos[5];    // For reflection and gloss 3-dim
+VEC lightpos[9];    // For reflection and gloss 3-dim
 int numlights;
 VEC camera;         // For camera pos 3-dim
 
@@ -234,12 +236,51 @@ void lightCreate(){
     pt[2] = addPoint3D( 5, 9, 5 );
     pt[3] = addPoint3D( -5, 9, 5 );
 
+    pt[4] = addPoint3D( 5, 9.5, -5 );
+    pt[5] = addPoint3D( -5, 9.5, -5 );
+    pt[6] = addPoint3D( 5, 9.5, 5 );
+    pt[7] = addPoint3D( -5, 9.5, 5 );
+
+
     // Light Source
     patch = createPatch();
     face = addSurface3D( 4, pt[2], pt[3], pt[1], pt[0] );
     setSurface3DNormal( &face, 0, -1, 0 );
     addPatch( &patch, face );
     addModel( &lightSource, patch );
+
+    // Light Patch
+    /*
+    patch = createPatch();
+    face = addSurface3D( 4, pt[4], pt[5], pt[7], pt[6] );
+    setSurface3DNormal( &face, 0, 1, 0 );
+    addPatch( &patch, face );
+    addModel( &lightPatch, patch );
+
+    patch = createPatch();
+    face = addSurface3D( 4, pt[0], pt[1], pt[5], pt[4] );
+    setSurface3DNormal( &face, 0, 0, -1 );
+    addPatch( &patch, face );
+    addModel( &lightPatch, patch );
+
+    patch = createPatch();
+    face = addSurface3D( 4, pt[1], pt[3], pt[7], pt[5] );
+    setSurface3DNormal( &face, 1, 0, 0 );
+    addPatch( &patch, face );
+    addModel( &lightPatch, patch );
+
+    patch = createPatch();
+    face = addSurface3D( 4, pt[3], pt[2], pt[6], pt[7] );
+    setSurface3DNormal( &face, 0, 0, 1 );
+    addPatch( &patch, face );
+    addModel( &lightPatch, patch );
+
+    patch = createPatch();
+    face = addSurface3D( 4, pt[2], pt[0], pt[4], pt[6] );
+    setSurface3DNormal( &face, -1, 0, 0 );
+    addPatch( &patch, face );
+    addModel( &lightPatch, patch );
+    */
 
 }
 
@@ -312,6 +353,27 @@ void wallCreate(){
     setSurface3DNormal( &face, 0, 0, -1 );
     addPatch( &patch, face );
     addModel( &wall[5], patch );
+
+}
+
+void mirrorCreate( void ){
+
+    PATCH patch;
+    SURFACE_3D face;
+    POINT_3D pt[4];
+
+    pt[0] = addPoint3D( -5, -7, -8 );
+    pt[1] = addPoint3D( 5, -7, -8 );
+    pt[2] = addPoint3D( 5, 3, -8 );
+    pt[3] = addPoint3D( -5, 3, -8 );
+
+    mirror = createModel();
+
+    patch = createPatch();
+    face = addSurface3D( 4, pt[0], pt[1], pt[2], pt[3] );
+    setSurface3DNormal( &face, 0, 0, 1 );
+    addPatch( &patch, face );
+    addModel( &mirror, patch );
 
 }
 
@@ -467,11 +529,12 @@ void setModel(){
     lightCreate();
 
     // Light is setting at (0,9,0) - center of the light source
+
     lightpos[numlights].vector[0] = 0;
     lightpos[numlights].vector[1] = 9;
     lightpos[numlights].vector[2] = 0;
     numlights++;
-
+    /*
     lightpos[numlights].vector[0] = 5;
     lightpos[numlights].vector[1] = 9;
     lightpos[numlights].vector[2] = 5;
@@ -482,7 +545,6 @@ void setModel(){
     lightpos[numlights].vector[2] = 5;
     numlights++;
 
-
     lightpos[numlights].vector[0] = -5;
     lightpos[numlights].vector[1] = 9;
     lightpos[numlights].vector[2] = -5;
@@ -492,21 +554,28 @@ void setModel(){
     lightpos[numlights].vector[1] = 9;
     lightpos[numlights].vector[2] = -5;
     numlights++;
-
+*/
     setReflection( &lightSource, 0.8, 0.8, 0.8 );
     setEmission( &lightSource, 1.27, 1.27, 1.27 );
+
+    //setReflection( &lightPatch, 0.8, 0.8, 0.8 );
+
+    // Mirror
+    mirrorCreate();
+    setReflection( &mirror, 0.0, 0.0, 0.0 );
 
 }
 
 void init(){
 
     // Initial Var
-    colorMode = 0;  // Diffuse
+    colorMode = 0;      // Diffuse
     gouraudShader = 0;  //No interpolation
-    rayTracing = 0;  // Initial ray-tracing is off
+    rayTracing = 0;     // Initial ray-tracing is off
     grid = 0;
 
-    maxlevel = 1;   // Tracing depth
+    camera = vCreate( 3 );
+    maxlevel = 3;       // Tracing depth
 
     int im, ip, iface;
     int jm, jp, jface;
@@ -534,13 +603,14 @@ void init(){
     scene = createScene();
     // Light
     addScene( &scene, lightSource );
+    //addScene( &scene, lightPatch );
 
     // Model
     //addScene( &scene, sphere );
-    //addScene( &scene, square[0] );
+    addScene( &scene, square[0] );
     //addScene( &scene, square[1] );
 
-    addScene( &scene, tri );
+    //addScene( &scene, tri );
 
     addScene( &scene, wall[0] );
     addScene( &scene, wall[1] );
@@ -548,6 +618,8 @@ void init(){
     addScene( &scene, wall[3] );
     addScene( &scene, wall[4] );
     addScene( &scene, wall[5] );
+
+    addScene( &scene, mirror );
 
     // refine clip
     if( CLIP_TYPE ){
@@ -789,9 +861,9 @@ void content( void ){
 
             searchSceneSurface( scene, i, &fm, &fp, &f );
 
-            if( fm == 7 )
+/*            if( fm == 7 )
                 continue;
-
+*/
             color[0] = colorMode ? scene.list[fm].reflection[0] : b[0].vector[i] * 3;
             color[1] = colorMode ? scene.list[fm].reflection[1] : b[1].vector[i] * 3;
             color[2] = colorMode ? scene.list[fm].reflection[2] : b[2].vector[i] * 3;

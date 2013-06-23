@@ -44,6 +44,20 @@ POINT_3D centerPP( POINT_3D a, POINT_3D b ){
 
 }
 
+double areaTri( POINT_3D pa, POINT_3D pb, POINT_3D pc ){
+
+    double a, b, c;
+    double s;
+
+    a = lengthPP( pa, pb );
+    b = lengthPP( pb, pc );
+    c = lengthPP( pc, pa );
+    s = ( a + b + c ) / 2;
+
+    return sqrt( s * ( s - a ) * ( s - b ) * ( s - c ) );
+
+}
+
 double lengthPP( POINT_3D a, POINT_3D b ){
     return sqrt( pow( b.x - a.x, 2 ) + pow( b.y - a.y, 2 ) + pow( b.z - a.z, 2 ) );
 }

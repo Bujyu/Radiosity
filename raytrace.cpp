@@ -74,6 +74,11 @@ bool intersectionTri( SURFACE_3D &f, POINT_3D &st, const VEC &dir, double &t ){
     vDestroy( tvec );
     vDestroy( qvec );
 
+    #define EPS 1E-6
+
+    if( t < EPS )
+        return false;
+
     return true;
 
 }
@@ -116,7 +121,7 @@ bool intersection( SURFACE_3D &f, POINT_3D &st, const VEC &dir, double &t ){
 bool ShadowFeeler (const VEC &point, const VEC &light, const int faceid){
 
 	// dir = norm (light - point);
-	// distance = len (light - point);
+        // distance = len (light - point);
 	// for each object in scene
 	//    if object is same as self
     //        continue
@@ -172,8 +177,8 @@ struct _material {
 
 VEC EvaluateIlocal( const VEC &point, const int faceid, const VEC &n ){
 
-	extern VEC lightpos[5];
-	//extern VEC camera;
+	extern VEC *lightpos;
+	extern VEC camera;
 	extern int searchSceneSurface( const SCENE &scene, int count, int *m, int *p, int *f );
 	extern int numlights;;
 
@@ -182,7 +187,7 @@ VEC EvaluateIlocal( const VEC &point, const int faceid, const VEC &n ){
 
     int mid, pid, fid;
 
-	VEC intensity = vCreateArg( 3, 0.0, 0.0, 0.0 );
+	VEC intensity = vCreate( 3 );
 	for( int i = 0; i < numlights; i++ ) {
 
         extern VEC b[3];
@@ -203,11 +208,10 @@ VEC EvaluateIlocal( const VEC &point, const int faceid, const VEC &n ){
 		if ( ndotl > 0.0 && !ShadowFeeler( point, lightpos[i], faceid )  ){ // no block
 
             //diffuuse component
-            intensity.vector[0] += ndotl * b[0].vector[faceid];
-            intensity.vector[1] += ndotl * b[1].vector[faceid];
-            intensity.vector[2] += ndotl * b[2].vector[faceid];
+            intensity.vector[0] += ndotl * scene.list[mid].reflection[0]*0.2;
+            intensity.vector[1] += ndotl * scene.list[mid].reflection[1]*0.2;
+            intensity.vector[2] += ndotl * scene.list[mid].reflection[2]*0.2;
 
-/*
             //Has edited variable reflect
 			VEC reflect = vCreate( 3 );
 			tmp = vScalar( n, 2 * ndotl );  // vector create
@@ -221,18 +225,22 @@ VEC EvaluateIlocal( const VEC &point, const int faceid, const VEC &n ){
 			vDestroy( tmp );                // vector destroy
 
 			//specular component
-			double shininessFactor = vDot( reflect, v ) * 250;
-            intensity.vector[0] += pow( shininessFactor, 1.0 );
-            intensity.vector[1] += pow( shininessFactor, 1.0 );
-            intensity.vector[2] += pow( shininessFactor, 1.0 );
+			double shininessFactor = pow( vDot( reflect, v ), mid == 8 ? 2500 : 80 );
+            intensity.vector[0] += shininessFactor * 0.7;
+            intensity.vector[1] += shininessFactor * 0.7;
+            intensity.vector[2] += shininessFactor * 0.7;
 
             vDestroy( reflect );
-*/
+
 		}
 
         vDestroy( l );
 
 	}
+
+    intensity.vector[0] /= numlights;
+    intensity.vector[1] /= numlights;
+    intensity.vector[2] /= numlights;
 
 	return intensity;
 
@@ -250,7 +258,7 @@ VEC raytrace( const VEC &c, const VEC &dir, int &level ){
 	if( level > maxlevel )
 		return vCreateArg( 3, 0.0, 0.0, 0.0 );
 
-	level++;
+	//level++;
 
 	// {find first hit (object, point)}
 	int first_hit = -1;
@@ -285,19 +293,19 @@ VEC raytrace( const VEC &c, const VEC &dir, int &level ){
 
 		VEC intensity = EvaluateIlocal( point, first_hit, normal );
 
-		double Kr = 1.0;
+		double Kr = ( mid != 8 ? 0.2 : 0.6 );
 
-		extern VEC camera;
+		//extern VEC camera;
 		VEC tmp = vCreate( 3 );
 
 		// vNormalize( 2 * vDot( camera - point, normal ) * normal - ( camera - point ) );
-		VSUB3( tmp, camera, point );    // Vector camera to point
+		VSUB3( tmp, c, point );    // Vector camera to point
 		double dot = vDot( tmp, normal );
         tmp.vector[0] = 2 * dot * normal.vector[0] - tmp.vector[0];
         tmp.vector[1] = 2 * dot * normal.vector[1] - tmp.vector[1];
         tmp.vector[2] = 2 * dot * normal.vector[2] - tmp.vector[2];
-
         VEC reflect = vNormalize( tmp );
+
         vDestroy( tmp );
 
         tmp = raytrace( point, reflect, ++level );

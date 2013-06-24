@@ -86,7 +86,7 @@ void DoRayTrace( void ){
 	op.vector[1] = op.vector[1] - w / 2 * U.vector[1] - w / 2 * V.vector[1];
 	op.vector[2] = op.vector[2] - w / 2 * U.vector[2] - w / 2 * V.vector[2];
 
-	VEC r = vCreate( 3 );
+	VEC dir = vCreate( 3 );
 	VEC gridpt = vCreate( 3 );
 	//VEC p = vCreate( 3 );
 	//VEC normal = vCreate( 3 );
@@ -109,12 +109,12 @@ void DoRayTrace( void ){
 
 			// r = norm( gridpt - c );
 			VSUB3( tmp, gridpt, c );
-			r = vNormalize( tmp );
+			dir = vNormalize( tmp );
 
 			level = 1;
 
             //cout << i << "-" << j <<endl;
-			VEC intensity = raytrace( c, r, level );  // level 1 for eye ray
+			VEC intensity = raytrace( c, dir, level );  // level 1 for eye ray
             intensity.vector[0] = clamp( intensity.vector[0], 0.0, 1.0 );
             intensity.vector[1] = clamp( intensity.vector[1], 0.0, 1.0 );
             intensity.vector[2] = clamp( intensity.vector[2], 0.0, 1.0 );
@@ -129,7 +129,7 @@ void DoRayTrace( void ){
 
     vDestroy( tmp );
     vDestroy( gridpt );
-    vDestroy( r );
+    vDestroy( dir );
 
     vDestroy( U );
     vDestroy( V );

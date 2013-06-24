@@ -60,7 +60,10 @@ SCENE scene;
 // Variables for ray-tracing
 GLubyte image[600][600][3];
 int maxlevel;       // max level of reflection
-VEC lightpos[9];    // For reflection and gloss 3-dim
+
+#define MAX_NUM_LIGHT 5
+VEC *lightpos;    // For reflection and gloss 3-dim
+
 int numlights;
 VEC camera;         // For camera pos 3-dim
 
@@ -488,14 +491,6 @@ void axis(){
 
 void setModel(){
 
-    //float center[3], radius = 0.0;
-    lightpos[0] = vCreate( 3 );    // Initial light position vec
-    lightpos[1] = vCreate( 3 );
-    lightpos[2] = vCreate( 3 );
-    lightpos[3] = vCreate( 3 );
-    lightpos[4] = vCreate( 3 );
-    numlights = 0;
-
     //Model Create
 
     /* Sphere */
@@ -530,11 +525,21 @@ void setModel(){
     lightCreate();
 
     // Light is setting at (0,9,0) - center of the light source
+    lightpos = ( VEC* ) malloc( sizeof( VEC ) * pow( MAX_NUM_LIGHT+1, 2 ) );
+    numlights = 0;
+    double step = ( 10 / MAX_NUM_LIGHT );
+    printf( "%f\n", step );
+    for( int i = 0 ; i <= MAX_NUM_LIGHT  ; i++){
+        for( int j = 0 ; j <= MAX_NUM_LIGHT ;  j++ ){
+            lightpos[numlights] = vCreate( 3 );
+            lightpos[numlights].vector[0] = -5 + step * i;
+            lightpos[numlights].vector[1] = 9;
+            lightpos[numlights].vector[2] = -5 + step * j;
+            vPrint( lightpos[numlights] );
+            numlights++;
+        }
+    }
 
-    lightpos[numlights].vector[0] = 0;
-    lightpos[numlights].vector[1] = 9;
-    lightpos[numlights].vector[2] = 0;
-    numlights++;
     /*
     lightpos[numlights].vector[0] = 5;
     lightpos[numlights].vector[1] = 9;
@@ -555,7 +560,8 @@ void setModel(){
     lightpos[numlights].vector[1] = 9;
     lightpos[numlights].vector[2] = -5;
     numlights++;
-*/
+    */
+
     setReflection( &lightSource, 0.8, 0.8, 0.8 );
     setEmission( &lightSource, 1.27, 1.27, 1.27 );
 
@@ -576,7 +582,7 @@ void init(){
     grid = 0;
 
     camera = vCreate( 3 );
-    maxlevel = 2;       // Tracing depth
+    maxlevel = 3;       // Tracing depth
 
     int im, ip, iface;
     int jm, jp, jface;

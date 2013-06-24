@@ -284,7 +284,8 @@ VEC raytrace( const VEC &c, const VEC &dir, int &level ){
 		VEC normal = vClone( scene.list[mid].plist[pid].flist[fid].normal );
 
 		VEC intensity = EvaluateIlocal( point, first_hit, normal );
-		double Kr = 0.6;
+
+		double Kr = 1.0;
 
 		extern VEC camera;
 		VEC tmp = vCreate( 3 );

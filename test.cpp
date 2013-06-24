@@ -347,13 +347,14 @@ void wallCreate(){
     addModel( &wall[4], patch );
 
     // Light Source
+    /*
     patch = createPatch();
     face = addSurface3D( 4, pt[5], pt[4], pt[7], pt[6] );
     //face = addSurface3D( 4, pt[8], pt[9], pt[10], pt[11] );
     setSurface3DNormal( &face, 0, 0, -1 );
     addPatch( &patch, face );
     addModel( &wall[5], patch );
-
+*/
 }
 
 void mirrorCreate( void ){
@@ -575,7 +576,7 @@ void init(){
     grid = 0;
 
     camera = vCreate( 3 );
-    maxlevel = 3;       // Tracing depth
+    maxlevel = 2;       // Tracing depth
 
     int im, ip, iface;
     int jm, jp, jface;

@@ -122,6 +122,7 @@ void interpolation( POINT_3D *ipt, const SURFACE_3D &face, double u, double v );
 
 double squareArea( SURFACE_3D face );
 double triangleArea( SURFACE_3D face );
+double triangleAreaPP( double a, double b, double c );
 double surfaceArea( SURFACE_3D face );
 
 // Patch

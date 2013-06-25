@@ -152,10 +152,14 @@ bool ShadowFeeler (const VEC &point, const VEC &light, const int faceid){
 
         searchSceneSurface( scene, i, &m, &p, &f );
         //cout << faceid << " " << i << " " << intersection( scene.list[m].plist[p].flist[f], st, dir, t ) << endl;
-        if( intersection( scene.list[m].plist[p].flist[f], st, dir, t ) && ( m != mid && p != pid && f != fid )  )
+        if( intersection( scene.list[m].plist[p].flist[f], st, dir, t ) && ( m != mid && p != pid && f != fid )  ){
+            vDestroy( dir );
             return true;
+        }
 
     }
+
+    vDestroy( dir );
     return false;
 
 }
@@ -175,6 +179,57 @@ struct _material {
 	int shininess;
 };
 
+void getMaterial( const int fidx, const VEC &point, struct _material *mat ){
+
+    extern int searchSceneSurface( const SCENE &scene, int count, int *m, int *p, int *f );
+    int m, p, f;
+    POINT_3D pt = addPoint3D( point.vector[0], point.vector[1], point.vector[2] );
+
+    searchSceneSurface( scene, fidx, &m, &p, &f );
+    int n;
+
+    if( lengthPP( scene.list[m].plist[p].flist[f].plist[0], pt ) > lengthPP( scene.list[m].plist[p].flist[f].plist[2], pt ) )
+        n = 2;
+    else
+        n = 0;
+
+    double a = triangleAreaPP( lengthPP( pt, scene.list[m].plist[p].flist[f].plist[(n+1)%4] ),
+                               lengthPP( pt, scene.list[m].plist[p].flist[f].plist[(n+3)%4] ),
+                               lengthPP( scene.list[m].plist[p].flist[f].plist[(n+3)%4], scene.list[m].plist[p].flist[f].plist[(n+1)%4] ) );
+
+    double b = triangleAreaPP( lengthPP( pt, scene.list[m].plist[p].flist[f].plist[n] ),
+                               lengthPP( pt, scene.list[m].plist[p].flist[f].plist[(n+3)%4] ),
+                               lengthPP( scene.list[m].plist[p].flist[f].plist[(n+3)%4], scene.list[m].plist[p].flist[f].plist[n] ) );
+
+    double c = triangleAreaPP( lengthPP( pt, scene.list[m].plist[p].flist[f].plist[n] ),
+                               lengthPP( pt, scene.list[m].plist[p].flist[f].plist[(n+1)%4] ),
+                               lengthPP( scene.list[m].plist[p].flist[f].plist[n], scene.list[m].plist[p].flist[f].plist[(n+1)%4] ) );
+
+    double s = triangleAreaPP( lengthPP( scene.list[m].plist[p].flist[f].plist[n], scene.list[m].plist[p].flist[f].plist[(n+1)%4] ),
+                               lengthPP( scene.list[m].plist[p].flist[f].plist[n], scene.list[m].plist[p].flist[f].plist[(n+3)%4] ),
+                               lengthPP( scene.list[m].plist[p].flist[f].plist[(n+3)%4], scene.list[m].plist[p].flist[f].plist[(n+1)%4] ) );
+
+    double color[3];
+
+    color[0] = a * scene.list[m].plist[p].flist[f].plist[n].rad[0] +
+               b * scene.list[m].plist[p].flist[f].plist[(n+1)%4].rad[0] +
+               c * scene.list[m].plist[p].flist[f].plist[(n+3)%4].rad[0] ;
+
+    color[1] = a * scene.list[m].plist[p].flist[f].plist[n].rad[1] +
+               b * scene.list[m].plist[p].flist[f].plist[(n+1)%4].rad[1] +
+               c * scene.list[m].plist[p].flist[f].plist[(n+3)%4].rad[1] ;
+
+    color[2] = a * scene.list[m].plist[p].flist[f].plist[n].rad[2] +
+               b * scene.list[m].plist[p].flist[f].plist[(n+1)%4].rad[2] +
+               c * scene.list[m].plist[p].flist[f].plist[(n+3)%4].rad[2] ;
+
+    (*mat).ambient = vCreateArg( 3, color[0] * 3 / s, color[1] * 3 / s, color[2] * 3 / s );
+    (*mat).diffuse = vCreateArg( scene.list[m].reflection[0]*0.2, scene.list[m].reflection[1]*0.2, scene.list[m].reflection[2]*0.2 );
+    (*mat).specular = vCreateArg( 3, 0.7, 0.7, 0.7 );
+    (*mat).shininess = ( m == 8 ? 2500 : 80 );
+
+}
+
 VEC EvaluateIlocal( const VEC &point, const int faceid, const VEC &n ){
 
 	extern VEC *lightpos;
@@ -183,21 +238,21 @@ VEC EvaluateIlocal( const VEC &point, const int faceid, const VEC &n ){
 	extern int numlights;;
 
 	// compute normal of objectid at point
-	//struct _material mat;
+	struct _material mat;
+	getMaterial( faceid, point, &mat );
 
     int mid, pid, fid;
 
 	VEC intensity = vCreate( 3 );
 	for( int i = 0; i < numlights; i++ ) {
 
-        extern VEC b[3];
+        //extern VEC b[3];
 
         searchSceneSurface( scene, faceid, &mid, &pid, &fid );
         //ambient component
-        intensity.vector[0] += b[0].vector[faceid]*3;
-        intensity.vector[1] += b[1].vector[faceid]*3;
-        intensity.vector[2] += b[2].vector[faceid]*3;
-
+        intensity.vector[0] += mat.ambient.vector[0];
+        intensity.vector[1] += mat.ambient.vector[1];
+        intensity.vector[2] += mat.ambient.vector[2];
 
 		VEC tmp = vCreate( 3 );             // vector create
 		VSUB3( tmp, lightpos[i], point )
@@ -208,12 +263,12 @@ VEC EvaluateIlocal( const VEC &point, const int faceid, const VEC &n ){
 		if ( ndotl > 0.0 && !ShadowFeeler( point, lightpos[i], faceid )  ){ // no block
 
             //diffuuse component
-            intensity.vector[0] += ndotl * scene.list[mid].reflection[0]*0.2;
-            intensity.vector[1] += ndotl * scene.list[mid].reflection[1]*0.2;
-            intensity.vector[2] += ndotl * scene.list[mid].reflection[2]*0.2;
+            intensity.vector[0] += ndotl * mat.diffuse.vector[0];
+            intensity.vector[1] += ndotl * mat.diffuse.vector[1];
+            intensity.vector[2] += ndotl * mat.diffuse.vector[2];
 
             //Has edited variable reflect
-			VEC reflect = vCreate( 3 );
+			VEC reflect;
 			tmp = vScalar( n, 2 * ndotl );  // vector create
 			VSUB3( tmp, tmp, l );
 			reflect = vNormalize( tmp );
@@ -225,11 +280,12 @@ VEC EvaluateIlocal( const VEC &point, const int faceid, const VEC &n ){
 			vDestroy( tmp );                // vector destroy
 
 			//specular component
-			double shininessFactor = pow( vDot( reflect, v ), mid == 8 ? 2500 : 80 );
-            intensity.vector[0] += shininessFactor * 0.7;
-            intensity.vector[1] += shininessFactor * 0.7;
-            intensity.vector[2] += shininessFactor * 0.7;
+			double shininessFactor = pow( vDot( reflect, v ), mat.shininess );
+            intensity.vector[0] += shininessFactor * mat.specular.vector[0];
+            intensity.vector[1] += shininessFactor * mat.specular.vector[1];
+            intensity.vector[2] += shininessFactor * mat.specular.vector[2];
 
+            vDestroy( v );
             vDestroy( reflect );
 
 		}
@@ -237,6 +293,10 @@ VEC EvaluateIlocal( const VEC &point, const int faceid, const VEC &n ){
         vDestroy( l );
 
 	}
+
+    vDestroy( mat.ambient );
+    vDestroy( mat.diffuse );
+    vDestroy( mat.specular );
 
     intensity.vector[0] /= numlights;
     intensity.vector[1] /= numlights;
@@ -269,10 +329,20 @@ VEC raytrace( const VEC &c, const VEC &dir, int &level ){
     POINT_3D st = addPoint3D( c.vector[0], c.vector[1], c.vector[2] );
     int mid, pid, fid;
 
+    double d = dir.vector[0] * c.vector[0] +
+               dir.vector[1] * c.vector[1] +
+               dir.vector[2] * c.vector[2] ;
+
     /* All patches in the scene */
     for( int i = 0 ; i < scene.n_face ; i++ ){
 
         searchSceneSurface( scene, i, &mid, &pid, &fid );
+
+        if( dir.vector[0] * scene.list[mid].plist[pid].flist[fid].center.x +
+            dir.vector[1] * scene.list[mid].plist[pid].flist[fid].center.y +
+            dir.vector[2] * scene.list[mid].plist[pid].flist[fid].center.z <= d )
+            continue;
+
 		if( intersection( scene.list[mid].plist[pid].flist[fid], st, dir, t ) && t < min_d ) {
 			hit = true;
 			first_hit = i;
@@ -305,15 +375,14 @@ VEC raytrace( const VEC &c, const VEC &dir, int &level ){
         tmp.vector[1] = 2 * dot * normal.vector[1] - tmp.vector[1];
         tmp.vector[2] = 2 * dot * normal.vector[2] - tmp.vector[2];
         VEC reflect = vNormalize( tmp );
-
         vDestroy( tmp );
 
         tmp = raytrace( point, reflect, ++level );
 		intensity.vector[0] += Kr * clamp( tmp.vector[0], 0.0, 1.0 );
 		intensity.vector[1] += Kr * clamp( tmp.vector[1], 0.0, 1.0 );
 		intensity.vector[2] += Kr * clamp( tmp.vector[2], 0.0, 1.0 );
-
 		vDestroy( tmp );
+
 		vDestroy( reflect );
 		vDestroy( normal );
 		vDestroy( point );

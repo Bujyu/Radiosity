@@ -123,13 +123,13 @@ void DoRayTrace( void ){
 			SetRGB( i, j, intensity );
 
 			vDestroy( intensity );
+			vDestroy( dir );
 
 		}
 	}
 
     vDestroy( tmp );
     vDestroy( gridpt );
-    vDestroy( dir );
 
     vDestroy( U );
     vDestroy( V );

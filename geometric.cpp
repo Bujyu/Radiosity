@@ -181,14 +181,18 @@ void interpolationTri( POINT_3D *ipt, const SURFACE_3D &face, double u, double v
         n = 2;
     if( a < lengthPP( face.plist[0], face.plist[2] ) )
         n = 1;
-/*
-    (*ipt).x = ( 1.0 - u - v ) * face.plist[n].x + u * face.plist[(n+1)%3].x + v * face.plist[(n+2)%3].x;
-    (*ipt).y = ( 1.0 - u - v ) * face.plist[n].y + u * face.plist[(n+1)%3].y + v * face.plist[(n+2)%3].y;
-    (*ipt).z = ( 1.0 - u - v ) * face.plist[n].z + u * face.plist[(n+1)%3].z + v * face.plist[(n+2)%3].z;
-*/
-    (*ipt).x = u * ( v * ( face.plist[(n+1)%3].x - face.plist[n].x ) + ( 1.0 - v ) * ( face.plist[(n+2)%3].x - face.plist[n].x ) );
-    (*ipt).y = u * ( v * ( face.plist[(n+1)%3].y - face.plist[n].y ) + ( 1.0 - v ) * ( face.plist[(n+2)%3].y - face.plist[n].y ) );
-    (*ipt).z = u * ( v * ( face.plist[(n+1)%3].z - face.plist[n].z ) + ( 1.0 - v ) * ( face.plist[(n+2)%3].z - face.plist[n].z ) );
+
+    (*ipt).x = ( 1.0 - u ) * ( 1.0 - v ) * face.plist[n].x +
+               ( 1.0 - u ) * v * face.plist[(n+1)%3].x +
+               u * ( 1.0 - v ) * face.plist[(n+2)%3].x;
+
+    (*ipt).y = ( 1.0 - u ) * ( 1.0 - v ) * face.plist[0].y +
+               ( 1.0 - u ) * v * face.plist[(n+1)%3].y +
+               u * ( 1.0 - v ) * face.plist[(n+2)%3].y;
+
+    (*ipt).z = ( 1.0 - u ) * ( 1.0 - v ) * face.plist[0].z +
+               ( 1.0 - u ) * v * face.plist[(n+1)%3].z +
+               u * ( 1.0 - v ) * face.plist[(n+2)%3].z;
 
 }
 
@@ -215,7 +219,16 @@ double triangleArea( SURFACE_3D face ){
     a = lengthPP( face.plist[0], face.plist[1] );
     b = lengthPP( face.plist[1], face.plist[2] );
     c = lengthPP( face.plist[2], face.plist[0] );
-    s = ( a + b + c ) / 2;
+    s = ( a + b + c ) / 2.0;
+
+    return sqrt( s * ( s - a ) * ( s - b ) * ( s - c ) );
+
+}
+
+double triangleAreaPP( double a, double b, double c ){
+
+    double s;
+    s = ( a + b + c ) / 2.0;
 
     return sqrt( s * ( s - a ) * ( s - b ) * ( s - c ) );
 

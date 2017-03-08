@@ -60,10 +60,7 @@ SCENE scene;
 // Variables for ray-tracing
 GLubyte image[600][600][3];
 int maxlevel;       // max level of reflection
-
-#define MAX_NUM_LIGHT 5
 VEC *lightpos;    // For reflection and gloss 3-dim
-
 int numlights;
 VEC camera;         // For camera pos 3-dim
 
@@ -366,10 +363,10 @@ void mirrorCreate( void ){
     SURFACE_3D face;
     POINT_3D pt[4];
 
-    pt[0] = addPoint3D( -5, -7, -8 );
-    pt[1] = addPoint3D( 5, -7, -8 );
-    pt[2] = addPoint3D( 5, 3, -8 );
-    pt[3] = addPoint3D( -5, 3, -8 );
+    pt[0] = addPoint3D( -6, -7, -9 );
+    pt[1] = addPoint3D( 6, -7, -9 );
+    pt[2] = addPoint3D( 6, 5, -9 );
+    pt[3] = addPoint3D( -6, 5, -9 );
 
     mirror = createModel();
 
@@ -499,7 +496,7 @@ void setModel(){
 
     /* Square */
     double squ0_size[3] = { 7, 7, 7 };
-    double squ0_pos[3] = { -5, ( squ0_size[1] / 2 ) - 10, 5 };
+    double squ0_pos[3] = { -5.5, ( squ0_size[1] / 2 ) - 10, 5.5 };
     squareCreate( &square[0], squ0_size, squ0_pos );
     setReflection( &square[0], 0.54, 0.54, 0.54 );
 
@@ -524,18 +521,18 @@ void setModel(){
     /* Light */
     lightCreate();
 
+    #define MAX_NUM_LIGHT 2
+
     // Light is setting at (0,9,0) - center of the light source
-    lightpos = ( VEC* ) malloc( sizeof( VEC ) * pow( MAX_NUM_LIGHT+1, 2 ) );
+    lightpos = ( VEC* ) malloc( sizeof( VEC ) * pow( MAX_NUM_LIGHT, 2 ) );
     numlights = 0;
-    double step = ( 10 / MAX_NUM_LIGHT );
-    printf( "%f\n", step );
-    for( int i = 0 ; i <= MAX_NUM_LIGHT  ; i++){
-        for( int j = 0 ; j <= MAX_NUM_LIGHT ;  j++ ){
+    double step = (double) ( 10.0 / (MAX_NUM_LIGHT-1) );
+    for( int i = 0 ; i < MAX_NUM_LIGHT  ; i++){
+        for( int j = 0 ; j < MAX_NUM_LIGHT ;  j++ ){
             lightpos[numlights] = vCreate( 3 );
             lightpos[numlights].vector[0] = -5 + step * i;
             lightpos[numlights].vector[1] = 9;
             lightpos[numlights].vector[2] = -5 + step * j;
-            vPrint( lightpos[numlights] );
             numlights++;
         }
     }
@@ -819,6 +816,22 @@ void init(){
                                                   pcollect[i][j].count );
     }*/
 
+    // Update point information ( color )
+    for( int i = 0 ; i < scene.n_face ; i++ ){
+        int fm, fp, f;
+        searchSceneSurface( scene, i, &fm, &fp, &f );
+        for( int k = 0 ; k < scene.list[fm].plist[fp].flist[f].n_point ; k++ ){
+            for( int n = 0 ; n < (int) pcollect[fm][fp].size() ; n++ ){
+                if( PTEQU( scene.list[fm].plist[fp].flist[f].plist[k], pcollect[fm][fp][n] ) ){
+                    scene.list[fm].plist[fp].flist[f].plist[k].rad[0] = pcollect[fm][fp][n].rad[0];
+                    scene.list[fm].plist[fp].flist[f].plist[k].rad[1] = pcollect[fm][fp][n].rad[1];
+                    scene.list[fm].plist[fp].flist[f].plist[k].rad[2] = pcollect[fm][fp][n].rad[2];
+                    break;
+                }
+            }
+        }
+    }
+
     glEnable( GL_DEPTH_TEST );
 
     //Initial color
@@ -856,9 +869,21 @@ void content( void ){
 
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
+
     if( rayTracing ){
+
+        LARGE_INTEGER t1, t2, ts;
+        QueryPerformanceFrequency(&ts);
+
+        printf("Start Ray-tracer\n");
+        QueryPerformanceCounter(&t1);
+
         DoRayTrace();
 		DisplayImage();
+
+        QueryPerformanceCounter(&t2);
+        printf("\nComplete Ray-tracer\t%f s\n", (t2.QuadPart-t1.QuadPart)/(double)(ts.QuadPart) );
+
     }
     else{
         //axis();
@@ -881,12 +906,13 @@ void content( void ){
             grid ? glPolygonMode( GL_FRONT_AND_BACK, GL_LINE ) : glPolygonMode( GL_BACK, GL_LINE );
             glBegin( GL_POLYGON );
             for( int k = 0 ; k < scene.list[fm].plist[fp].flist[f].n_point ; k++ ){
-                for( int n = 0 ; n < (int) pcollect[fm][fp].size() && gouraudShader ; n++ ){
-                    if( PTEQU( scene.list[fm].plist[fp].flist[f].plist[k], pcollect[fm][fp][n] ) ){
-                        glColor3f( clap( pcollect[fm][fp][n].rad[0] * 3, 0.0, 1.0 ), clap( pcollect[fm][fp][n].rad[1] * 3, 0.0, 1.0 ), clap( pcollect[fm][fp][n].rad[2] * 3, 0.0, 1.0 ) );
-                        break;
-                    }
-                }
+
+                // Using terminal point color
+                if( gouraudShader )
+                    glColor3f( clap( scene.list[fm].plist[fp].flist[f].plist[k].rad[0] * 3, 0.0, 1.0 ),
+                               clap( scene.list[fm].plist[fp].flist[f].plist[k].rad[1] * 3, 0.0, 1.0 ),
+                               clap( scene.list[fm].plist[fp].flist[f].plist[k].rad[2] * 3, 0.0, 1.0 ) );
+
                 glVertex3f( scene.list[fm].plist[fp].flist[f].plist[k].x,
                             scene.list[fm].plist[fp].flist[f].plist[k].y,
                             scene.list[fm].plist[fp].flist[f].plist[k].z  );
